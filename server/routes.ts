@@ -1,0 +1,345 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertLoadRequestSchema, insertCallLogSchema } from "@shared/schema";
+import { transcribeAudio, extractLoadInfo, generateLoadSummary } from "./openai";
+import { sendOwnerNotification, sendOwnerSMS } from "./email";
+import { saveLoadToGoogleSheets, updateLoadStatusInGoogleSheets, initializeGoogleSheet } from "./googleSheets";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const upload = multer({ 
+  dest: 'uploads/',
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/m4a'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only audio files are allowed.'), false);
+    }
+  },
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB limit
+  }
+});
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Initialize Google Sheets
+  try {
+    await initializeGoogleSheet();
+  } catch (error) {
+    console.error("Failed to initialize Google Sheets:", error);
+  }
+
+  // Get all load requests
+  app.get("/api/load-requests", async (req, res) => {
+    try {
+      const loadRequests = await storage.getAllLoadRequests();
+      res.json(loadRequests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch load requests" });
+    }
+  });
+
+  // Get single load request
+  app.get("/api/load-requests/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const loadRequest = await storage.getLoadRequest(id);
+      if (!loadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+      res.json(loadRequest);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch load request" });
+    }
+  });
+
+  // Create load request from call simulation
+  app.post("/api/simulate-call", async (req, res) => {
+    try {
+      const { phoneNumber, customerName } = req.body;
+      
+      // Create call log
+      const callLog = await storage.createCallLog({
+        phoneNumber: phoneNumber || "+1 (555) 123-4567",
+        duration: 0,
+        status: "simulated",
+        transcription: null,
+        audioFileUrl: null,
+        loadRequestId: null,
+      });
+
+      // Simulate transcription after a delay
+      setTimeout(async () => {
+        const mockTranscription = `Hi, this is ${customerName || 'Sarah'} calling about a delivery. I need to book a truck for tomorrow. We need to pick up electronics equipment from our warehouse in Dallas, Texas at 123 Industrial Drive, and deliver it to Houston, Texas at 456 Commerce Street. The load is about 40,000 pounds. We need a dry van trailer. The pickup window is between 8 AM and 10 AM, and delivery should be same day if possible.`;
+        
+        try {
+          // Update call log with transcription
+          await storage.updateCallLogTranscription(callLog.id, mockTranscription);
+          
+          // Extract load information
+          const extractedData = await extractLoadInfo(mockTranscription);
+          
+          // Generate load ID
+          const loadId = `TF-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+          
+          // Create load request
+          const loadRequest = await storage.createLoadRequest({
+            loadId,
+            customerName: extractedData.customerName,
+            customerPhone: extractedData.customerPhone || phoneNumber || "+1 (555) 123-4567",
+            pickupLocation: extractedData.pickupLocation,
+            pickupAddress: extractedData.pickupAddress,
+            deliveryLocation: extractedData.deliveryLocation,
+            deliveryAddress: extractedData.deliveryAddress,
+            cargoType: extractedData.cargoType,
+            weight: extractedData.weight,
+            truckType: extractedData.truckType,
+            pickupTime: extractedData.pickupTime,
+            deliveryTime: extractedData.deliveryTime,
+            deadline: extractedData.deadline,
+            status: "pending",
+            transcription: mockTranscription,
+            extractedData: JSON.stringify(extractedData),
+            notificationSent: false,
+          });
+
+          // Save to Google Sheets
+          await saveLoadToGoogleSheets(loadRequest);
+
+          // Generate summary and send notification
+          const summary = await generateLoadSummary(extractedData);
+          const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+          const approveUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/approve`;
+          const rejectUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/reject`;
+
+          await sendOwnerNotification(
+            process.env.OWNER_EMAIL || "owner@trucking.com",
+            {
+              loadId: loadRequest.loadId,
+              customerName: extractedData.customerName,
+              customerPhone: extractedData.customerPhone || phoneNumber || "+1 (555) 123-4567",
+              route: `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`,
+              cargoType: extractedData.cargoType,
+              weight: extractedData.weight,
+              truckType: extractedData.truckType,
+              deadline: extractedData.deadline,
+              summary,
+            },
+            approveUrl,
+            rejectUrl
+          );
+
+          // Send SMS notification
+          await sendOwnerSMS(
+            process.env.OWNER_PHONE || "+1 (555) 999-8888",
+            loadRequest.loadId,
+            extractedData.customerName,
+            `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`
+          );
+
+        } catch (error) {
+          console.error("Error processing simulated call:", error);
+        }
+      }, 2000);
+
+      res.json({ callId: callLog.id, status: "Call simulation started" });
+    } catch (error) {
+      console.error("Error starting call simulation:", error);
+      res.status(500).json({ error: "Failed to start call simulation" });
+    }
+  });
+
+  // Upload and process audio file
+  app.post("/api/upload-audio", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file uploaded" });
+      }
+
+      const audioFilePath = req.file.path;
+      
+      // Transcribe audio using OpenAI Whisper
+      const { text: transcription, duration } = await transcribeAudio(audioFilePath);
+      
+      // Extract load information using GPT-4
+      const extractedData = await extractLoadInfo(transcription);
+      
+      // Generate load ID
+      const loadId = `TF-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+      
+      // Create load request
+      const loadRequest = await storage.createLoadRequest({
+        loadId,
+        customerName: extractedData.customerName,
+        customerPhone: extractedData.customerPhone,
+        pickupLocation: extractedData.pickupLocation,
+        pickupAddress: extractedData.pickupAddress,
+        deliveryLocation: extractedData.deliveryLocation,
+        deliveryAddress: extractedData.deliveryAddress,
+        cargoType: extractedData.cargoType,
+        weight: extractedData.weight,
+        truckType: extractedData.truckType,
+        pickupTime: extractedData.pickupTime,
+        deliveryTime: extractedData.deliveryTime,
+        deadline: extractedData.deadline,
+        status: "pending",
+        transcription,
+        extractedData: JSON.stringify(extractedData),
+        notificationSent: false,
+      });
+
+      // Create call log
+      await storage.createCallLog({
+        phoneNumber: extractedData.customerPhone,
+        duration: Math.round(duration),
+        status: "processed",
+        transcription,
+        audioFileUrl: audioFilePath,
+        loadRequestId: loadRequest.id,
+      });
+
+      // Save to Google Sheets
+      await saveLoadToGoogleSheets(loadRequest);
+
+      // Generate summary and send notification
+      const summary = await generateLoadSummary(extractedData);
+      const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+      const approveUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/approve`;
+      const rejectUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/reject`;
+
+      await sendOwnerNotification(
+        process.env.OWNER_EMAIL || "owner@trucking.com",
+        {
+          loadId: loadRequest.loadId,
+          customerName: extractedData.customerName,
+          customerPhone: extractedData.customerPhone,
+          route: `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`,
+          cargoType: extractedData.cargoType,
+          weight: extractedData.weight,
+          truckType: extractedData.truckType,
+          deadline: extractedData.deadline,
+          summary,
+        },
+        approveUrl,
+        rejectUrl
+      );
+
+      // Send SMS notification
+      await sendOwnerSMS(
+        process.env.OWNER_PHONE || "+1 (555) 999-8888",
+        loadRequest.loadId,
+        extractedData.customerName,
+        `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`
+      );
+
+      // Clean up uploaded file
+      fs.unlink(audioFilePath, (err) => {
+        if (err) console.error("Error deleting uploaded file:", err);
+      });
+
+      res.json({
+        loadRequest,
+        transcription,
+        extractedData,
+        message: "Audio processed successfully and notifications sent"
+      });
+
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      res.status(500).json({ error: "Failed to process audio file: " + (error as Error).message });
+    }
+  });
+
+  // Approve load request
+  app.post("/api/load-requests/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const loadRequest = await storage.updateLoadRequestStatus(id, "approved", new Date());
+      
+      if (!loadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      // Update in Google Sheets
+      await updateLoadStatusInGoogleSheets(loadRequest.loadId, "approved");
+
+      res.json({ message: "Load request approved successfully", loadRequest });
+    } catch (error) {
+      console.error("Error approving load request:", error);
+      res.status(500).json({ error: "Failed to approve load request" });
+    }
+  });
+
+  // Reject load request
+  app.post("/api/load-requests/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const loadRequest = await storage.updateLoadRequestStatus(id, "rejected", new Date());
+      
+      if (!loadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      // Update in Google Sheets
+      await updateLoadStatusInGoogleSheets(loadRequest.loadId, "rejected");
+
+      res.json({ message: "Load request rejected", loadRequest });
+    } catch (error) {
+      console.error("Error rejecting load request:", error);
+      res.status(500).json({ error: "Failed to reject load request" });
+    }
+  });
+
+  // Get all call logs
+  app.get("/api/call-logs", async (req, res) => {
+    try {
+      const callLogs = await storage.getAllCallLogs();
+      res.json(callLogs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch call logs" });
+    }
+  });
+
+  // Get dashboard metrics
+  app.get("/api/metrics", async (req, res) => {
+    try {
+      const loadRequests = await storage.getAllLoadRequests();
+      const callLogs = await storage.getAllCallLogs();
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const todaysCalls = callLogs.filter(call => 
+        call.createdAt && new Date(call.createdAt) >= today
+      ).length;
+      
+      const todaysLoads = loadRequests.filter(load => 
+        load.createdAt && new Date(load.createdAt) >= today
+      ).length;
+      
+      const pendingApproval = loadRequests.filter(load => load.status === "pending").length;
+      
+      const approvedLoads = loadRequests.filter(load => load.status === "approved");
+      const totalRevenue = approvedLoads.length * 2500; // Mock revenue calculation
+
+      res.json({
+        callsToday: todaysCalls,
+        loadsProcessed: todaysLoads,
+        pendingApproval,
+        revenue: totalRevenue,
+        totalLoads: loadRequests.length,
+        totalCalls: callLogs.length,
+      });
+    } catch (error) {
+      console.error("Error fetching metrics:", error);
+      res.status(500).json({ error: "Failed to fetch metrics" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
