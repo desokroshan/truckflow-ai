@@ -46,6 +46,10 @@ export async function processRecordingWebhook(
     const recordingData = await client.recordings(recordingSid).fetch();
     const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.mp3')}`;
     
+    // Get the phone number from the call
+    const callData = await client.calls(callSid).fetch();
+    const phoneNumber = callData.from;
+    
     // For this POC, we'll use the mock transcription since we can't easily download and process Twilio recordings
     // In production, you'd download the audio file and process it with OpenAI Whisper
     const mockTranscription = `Hi, I'm calling about a shipping request. I need to send electronics equipment from Dallas, Texas to Houston, Texas. The pickup is at 123 Industrial Drive in Dallas and delivery to 456 Commerce Street in Houston. The load weighs about 15,000 pounds and I need a dry van trailer. Pickup should be tomorrow between 8 AM and 10 AM, and I need same-day delivery if possible. This is for ABC Electronics, my name is John Smith and you can reach me at the number I'm calling from.`;
