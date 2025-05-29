@@ -23,9 +23,6 @@ export default function LoadDashboard() {
     queryKey: ["/api/load-requests"],
   });
 
-  // Debug log to see what data we're getting
-  console.log("Load requests data:", loadRequests);
-
   const approveMutation = useMutation({
     mutationFn: async (id: number) => {
       return await apiRequest("POST", `/api/load-requests/${id}/approve`);
