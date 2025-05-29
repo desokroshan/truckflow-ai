@@ -4,6 +4,7 @@ import CallSimulator from "@/components/call-simulator";
 import AIProcessing from "@/components/ai-processing";
 import LoadDashboard from "@/components/load-dashboard";
 import NotificationPanel from "@/components/notification-panel";
+import TwilioSetup from "@/components/twilio-setup";
 import { Truck, Settings } from "lucide-react";
 
 export default function Dashboard() {
@@ -48,6 +49,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-6">
             <CallSimulator />
             <AIProcessing />
+            <TwilioSetup />
           </div>
 
           {/* Side Panel */}

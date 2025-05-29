@@ -5,6 +5,7 @@ import { insertLoadRequestSchema, insertCallLogSchema } from "@shared/schema";
 import { transcribeAudio, extractLoadInfo, generateLoadSummary } from "./openai";
 import { sendOwnerNotification, sendOwnerSMS } from "./email";
 import { saveLoadToGoogleSheets, updateLoadStatusInGoogleSheets, initializeGoogleSheet } from "./googleSheets";
+import { createTwiMLResponse, handleIncomingCall, processRecordingWebhook } from "./twilio";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -301,6 +302,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(callLogs);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch call logs" });
+    }
+  });
+
+  // Twilio webhook for incoming calls
+  app.post("/api/twilio/voice", async (req, res) => {
+    try {
+      const { From: phoneNumber, CallSid: callSid } = req.body;
+      
+      // Handle incoming call
+      await handleIncomingCall(phoneNumber, callSid);
+      
+      // Create TwiML response to handle the call
+      const twiml = createTwiMLResponse();
+      
+      twiml.say({
+        voice: "alice",
+        language: "en-US"
+      }, "Thank you for calling TruckFlow Logistics. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.");
+      
+      // Record the conversation
+      twiml.record({
+        transcribe: false,
+        maxLength: 300, // 5 minutes max
+        action: `/api/twilio/recording`,
+        method: "POST"
+      });
+      
+      res.type('text/xml');
+      res.send(twiml.toString());
+    } catch (error) {
+      console.error("Error handling Twilio voice webhook:", error);
+      res.status(500).send("Error processing call");
+    }
+  });
+
+  // Twilio webhook for recording completion
+  app.post("/api/twilio/recording", async (req, res) => {
+    try {
+      const { 
+        RecordingUrl: recordingUrl,
+        RecordingSid: recordingSid, 
+        CallSid: callSid,
+        RecordingDuration: duration 
+      } = req.body;
+      
+      // Process the recording asynchronously
+      processRecordingWebhook(
+        recordingUrl,
+        recordingSid,
+        callSid,
+        parseInt(duration) || 0
+      ).catch(error => {
+        console.error("Error processing recording:", error);
+      });
+      
+      // Respond to caller
+      const twiml = createTwiMLResponse();
+      twiml.say({
+        voice: "alice",
+        language: "en-US"
+      }, "Thank you for your request. I'm processing your information and will send the details to our dispatch team. You should receive a confirmation within 15 minutes. Have a great day!");
+      
+      twiml.hangup();
+      
+      res.type('text/xml');
+      res.send(twiml.toString());
+    } catch (error) {
+      console.error("Error handling recording webhook:", error);
+      res.status(500).send("Error processing recording");
     }
   });
 
