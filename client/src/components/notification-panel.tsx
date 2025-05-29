@@ -143,11 +143,11 @@ export default function NotificationPanel() {
           <div className="text-xs text-slate-500 space-y-1">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-3 h-3 text-green-500" />
-              <span>Email sent to {process.env.REACT_APP_OWNER_EMAIL || 'owner@trucking.com'}</span>
+              <span>Email sent to owner@trucking.com</span>
             </div>
             <div className="flex items-center space-x-2">
               <MessageSquare className="w-3 h-3 text-blue-500" />
-              <span>SMS sent to {process.env.REACT_APP_OWNER_PHONE || '+1 (555) 999-8888'}</span>
+              <span>SMS sent to +1 (555) 999-8888</span>
             </div>
           </div>
 
