@@ -2,7 +2,7 @@ import { useState } from "react";
 import StatusOverview from "@/components/status-overview";
 import CallSimulator from "@/components/call-simulator";
 import AIProcessing from "@/components/ai-processing";
-import LoadDashboard from "@/components/load-dashboard";
+import LoadDashboard from "@/components/load-dashboard-new";
 import NotificationPanel from "@/components/notification-panel";
 import TwilioSetup from "@/components/twilio-setup";
 import { Truck, Settings } from "lucide-react";

@@ -11,6 +11,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Check, X, Eye, Download, Filter, Truck, MapPin } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { LoadRequest } from "@shared/schema";
@@ -22,6 +23,10 @@ export default function LoadDashboard() {
   const { data: loadRequests = [], isLoading } = useQuery<LoadRequest[]>({
     queryKey: ["/api/load-requests"],
   });
+
+  // Filter load requests by status
+  const pendingRequests = loadRequests.filter(load => load.status === "pending");
+  const approvedRequests = loadRequests.filter(load => load.status === "approved");
 
   const approveMutation = useMutation({
     mutationFn: async (id: number) => {

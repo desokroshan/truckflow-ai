@@ -109,7 +109,7 @@ export async function processRecordingWebhook(
     // Update call log with transcription and link to load request
     await storage.updateCallLogTranscription(
       parseInt(callSid.split('_')[1] || '1'), // Simple mapping for demo
-      mockTranscription
+      actualTranscription
     );
 
     // Save to Google Sheets (will log error if not configured)
