@@ -71,16 +71,24 @@ export async function processRecordingWebhook(
     
     // Transcribe the actual audio using OpenAI Whisper
     console.log(`Transcribing audio file: ${audioPath}`);
-    const transcriptionResult = await transcribeAudio(audioPath);
-    const actualTranscription = transcriptionResult.text;
+    let actualTranscription: string;
     
-    console.log(`Transcription: ${actualTranscription}`);
+    try {
+      const transcriptionResult = await transcribeAudio(audioPath);
+      actualTranscription = transcriptionResult.text;
+      console.log(`Transcription successful: ${actualTranscription}`);
+    } catch (transcriptionError) {
+      console.error(`Transcription failed:`, transcriptionError);
+      throw new Error(`Failed to transcribe audio: ${transcriptionError instanceof Error ? transcriptionError.message : 'Unknown error'}`);
+    }
     
     // Clean up temporary file
     fs.unlinkSync(audioPath);
 
     // Extract load information using AI from the real transcription
+    console.log(`Extracting load info from transcription...`);
     const extractedData = await extractLoadInfo(actualTranscription);
+    console.log(`Extracted data:`, JSON.stringify(extractedData, null, 2));
     
     // Generate unique load ID
     const loadId = `TF-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
