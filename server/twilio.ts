@@ -50,12 +50,37 @@ export async function processRecordingWebhook(
     const callData = await client.calls(callSid).fetch();
     const phoneNumber = callData.from;
     
-    // For this POC, we'll use the mock transcription since we can't easily download and process Twilio recordings
-    // In production, you'd download the audio file and process it with OpenAI Whisper
-    const mockTranscription = `Hi, I'm calling about a shipping request. I need to send electronics equipment from Dallas, Texas to Houston, Texas. The pickup is at 123 Industrial Drive in Dallas and delivery to 456 Commerce Street in Houston. The load weighs about 15,000 pounds and I need a dry van trailer. Pickup should be tomorrow between 8 AM and 10 AM, and I need same-day delivery if possible. This is for ABC Electronics, my name is John Smith and you can reach me at the number I'm calling from.`;
+    // Download and transcribe the actual audio recording
+    console.log(`Downloading audio from: ${audioUrl}`);
+    const response = await fetch(audioUrl, {
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to download recording: ${response.statusText}`);
+    }
+    
+    const audioBuffer = await response.arrayBuffer();
+    const audioPath = `uploads/recording_${recordingSid}.mp3`;
+    
+    // Save audio file temporarily
+    const fs = require('fs');
+    fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
+    
+    // Transcribe the actual audio using OpenAI Whisper
+    console.log(`Transcribing audio file: ${audioPath}`);
+    const transcriptionResult = await transcribeAudio(audioPath);
+    const actualTranscription = transcriptionResult.text;
+    
+    console.log(`Transcription: ${actualTranscription}`);
+    
+    // Clean up temporary file
+    fs.unlinkSync(audioPath);
 
-    // Extract load information using AI
-    const extractedData = await extractLoadInfo(mockTranscription);
+    // Extract load information using AI from the real transcription
+    const extractedData = await extractLoadInfo(actualTranscription);
     
     // Generate unique load ID
     const loadId = `TF-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
@@ -76,7 +101,7 @@ export async function processRecordingWebhook(
       deliveryTime: extractedData.deliveryTime,
       deadline: extractedData.deadline,
       status: "pending",
-      transcription: mockTranscription,
+      transcription: actualTranscription,
       extractedData: JSON.stringify(extractedData),
       notificationSent: false,
     });
