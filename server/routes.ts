@@ -73,79 +73,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         loadRequestId: null,
       });
 
-      // Simulate transcription after a delay
-      setTimeout(async () => {
-        const mockTranscription = `Hi, this is ${customerName || 'Sarah'} calling about a delivery. I need to book a truck for tomorrow. We need to pick up electronics equipment from our warehouse in Dallas, Texas at 123 Industrial Drive, and deliver it to Houston, Texas at 456 Commerce Street. The load is about 40,000 pounds. We need a dry van trailer. The pickup window is between 8 AM and 10 AM, and delivery should be same day if possible.`;
-        
-        try {
-          // Update call log with transcription
-          await storage.updateCallLogTranscription(callLog.id, mockTranscription);
-          
-          // Extract load information
-          const extractedData = await extractLoadInfo(mockTranscription);
-          
-          // Generate load ID
-          const loadId = `TF-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
-          
-          // Create load request
-          const loadRequest = await storage.createLoadRequest({
-            loadId,
-            customerName: extractedData.customerName,
-            customerPhone: extractedData.customerPhone || phoneNumber || "+1 (555) 123-4567",
-            pickupLocation: extractedData.pickupLocation,
-            pickupAddress: extractedData.pickupAddress,
-            deliveryLocation: extractedData.deliveryLocation,
-            deliveryAddress: extractedData.deliveryAddress,
-            cargoType: extractedData.cargoType,
-            weight: extractedData.weight,
-            truckType: extractedData.truckType,
-            pickupTime: extractedData.pickupTime,
-            deliveryTime: extractedData.deliveryTime,
-            deadline: extractedData.deadline,
-            status: "pending",
-            transcription: mockTranscription,
-            extractedData: JSON.stringify(extractedData),
-            notificationSent: false,
-          });
-
-          // Save to Google Sheets
-          await saveLoadToGoogleSheets(loadRequest);
-
-          // Generate summary and send notification
-          const summary = await generateLoadSummary(extractedData);
-          const baseUrl = process.env.BASE_URL || "http://localhost:5000";
-          const approveUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/approve`;
-          const rejectUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/reject`;
-
-          await sendOwnerNotification(
-            process.env.OWNER_EMAIL || "owner@trucking.com",
-            {
-              loadId: loadRequest.loadId,
-              customerName: extractedData.customerName,
-              customerPhone: extractedData.customerPhone || phoneNumber || "+1 (555) 123-4567",
-              route: `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`,
-              cargoType: extractedData.cargoType,
-              weight: extractedData.weight,
-              truckType: extractedData.truckType,
-              deadline: extractedData.deadline,
-              summary,
-            },
-            approveUrl,
-            rejectUrl
-          );
-
-          // Send SMS notification
-          await sendOwnerSMS(
-            process.env.OWNER_PHONE || "+1 (555) 999-8888",
-            loadRequest.loadId,
-            extractedData.customerName,
-            `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`
-          );
-
-        } catch (error) {
-          console.error("Error processing simulated call:", error);
-        }
-      }, 2000);
+      // Real audio processing will be handled by the Twilio recording webhook
+      console.log(`Call log created. Waiting for recording webhook to process actual audio...`);
 
       res.json({ callId: callLog.id, status: "Call simulation started" });
     } catch (error) {
