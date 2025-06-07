@@ -60,13 +60,11 @@ export default function StatusOverview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {isLoading ? (
-                    <div className="h-8 w-16 bg-slate-200 animate-pulse rounded"></div>
-                  ) : (
-                    stat.value
-                  )}
-                </p>
+                {isLoading ? (
+                  <div className="h-8 w-16 bg-slate-200 animate-pulse rounded"></div>
+                ) : (
+                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                )}
               </div>
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color}`}>
                 <stat.icon className="w-6 h-6" />

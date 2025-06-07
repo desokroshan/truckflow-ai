@@ -93,6 +93,12 @@ export async function updateLoadStatusInGoogleSheets(loadId: string, status: str
 
 export async function initializeGoogleSheet(): Promise<void> {
   try {
+    // Only initialize if Google Sheets client is available
+    if (!sheets || !SPREADSHEET_ID) {
+      console.log("Google Sheets not configured - skipping initialization");
+      return;
+    }
+
     // Check if the sheet exists and create headers if needed
     const headers = [
       "Load ID",
