@@ -7,16 +7,23 @@ const SHEET_NAME = "Load_Requests";
 
 export function initializeGoogleSheetsClient(sheetId: string, client_email: string, private_key: string): void {
   // Initialize Google Sheets client with environment variables
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email,
-      private_key,
-    },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-
+  console.log(`Initializing Google Sheets client with sheet ID: ${sheetId}`);
+  
+  // Format the private key properly
+  const formattedPrivateKey = private_key.replace(/\\n/g, '\n');
+  
+  // Create JWT client
+  const auth = new google.auth.JWT(
+    client_email,
+    undefined,
+    formattedPrivateKey,
+    ['https://www.googleapis.com/auth/spreadsheets'],
+    undefined
+  );
+  
   sheets = google.sheets({ version: "v4", auth });
   SPREADSHEET_ID = sheetId;
+  console.log(`Google Sheets client initialized with sheet ID: ${SPREADSHEET_ID}`);
   
   if (!SPREADSHEET_ID) {
     throw new Error('GOOGLE_SHEETS_ID environment variable is required');

@@ -85,7 +85,7 @@ export async function processRecordingWebhook(
     // Download the recording
     const recordingData = await getTwilioClient().recordings(recordingSid).fetch();
     console.log(`Recording data is: ${JSON.stringify(recordingData, null, 2)}`);
-    const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.mp3')}`;
+    const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.wav')}`;
     console.log(`Recording URL: ${audioUrl}`);
     
     // Get the phone number from the call
@@ -97,7 +97,7 @@ export async function processRecordingWebhook(
       method: 'GET',
       headers: {
         'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
-        'Accept': 'audio/mpeg'
+        'Accept': 'audio/x-wav'
       }
     });
     
