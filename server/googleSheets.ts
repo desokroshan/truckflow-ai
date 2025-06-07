@@ -26,7 +26,7 @@ export function initializeGoogleSheetsClient(sheetId: string, client_email: stri
 // Initialize client when module is loaded
 //initializeGoogleSheetsClient(process.env.GOOGLE_SHEETS_ID!, process.env.GOOGLE_SHEETS_CLIENT_EMAIL!, process.env.GOOGLE_SHEETS_PRIVATE_KEY!.replace(/\\n/g, '\n'));
 
-export async function saveLoadToGoogleSheets(loadRequest: LoadRequest): Promise<void> {
+export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise<void> {
   try {
     console.log('Attempting to save to Google Sheets');
     console.log('Spreadsheet ID:', SPREADSHEET_ID);

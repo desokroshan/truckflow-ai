@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import * as dotenv from 'dotenv';
 import { initializeTwilio } from './twilio';
 import { initializeEmailClient } from './email';
+import { initializeOpenAI } from './openai';
 import { initializeGoogleSheetsClient } from './googleSheets';
 
 // Load environment variables
@@ -14,6 +15,7 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const sheetId = process.env.GOOGLE_SHEETS_ID;
 const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
 const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
+const openaiApiKey = process.env.OPENAI_API_KEY;
 
 console.log(`Account SID from index: ${accountSid}`);
 console.log(`Auth Token from index: ${authToken}`);
@@ -23,7 +25,8 @@ if (!accountSid || !authToken) {
 
 // Initialize Twilio client after environment variables are loaded
 const twilioClient = initializeTwilio(accountSid, authToken);
-const googleSheetsClient = initializeGoogleSheetsClient(sheetId!, clientEmail!, privateKey!.replace(/\\n/g, '\n'));
+const openaiClient = initializeOpenAI(openaiApiKey!);
+const googleSheetsClient = initializeGoogleSheetsClient(sheetId!, clientEmail!, privateKey!.replace(/\n/g, '\n'));
 const emailClient = initializeEmailClient();
 
 const app = express();

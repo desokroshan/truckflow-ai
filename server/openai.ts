@@ -1,15 +1,26 @@
 import OpenAI from "openai";
 import fs from "fs";
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient: OpenAI;
+
+export function initializeOpenAI(apiKey: string) {
+  openaiClient = new OpenAI({ apiKey });
+  return openaiClient;
+}
+
+// Export the client as a getter
+export function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    throw new Error('OpenAI client not initialized. Call initializeOpenAI() first.');
+  }
+  return openaiClient;
+}
 
 export async function transcribeAudio(audioFilePath: string): Promise<{ text: string, duration: number }> {
   try {
     const audioReadStream = fs.createReadStream(audioFilePath);
 
-    const transcription = await openai.audio.transcriptions.create({
+    const transcription = await getOpenAIClient().audio.transcriptions.create({
       file: audioReadStream,
       model: "whisper-1",
     });
@@ -42,7 +53,7 @@ interface ExtractedLoadInfo {
 export async function extractLoadInfo(transcription: string): Promise<ExtractedLoadInfo> {
   try {
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -97,7 +108,7 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
 export async function generateLoadSummary(loadData: ExtractedLoadInfo): Promise<string> {
   try {
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
