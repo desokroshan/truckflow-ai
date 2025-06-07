@@ -3,6 +3,8 @@ import { storage } from "./storage";
 import { insertLoadRequestSchema, insertCallLogSchema } from "@shared/schema";
 import { transcribeAudio, extractLoadInfo, generateLoadSummary } from "./openai";
 import { sendOwnerNotification, sendOwnerSMS } from "./email";
+import express from "express";
+import { Express } from "express";
 import { saveLoadToGoogleSheets, updateLoadStatusInGoogleSheets, initializeGoogleSheet } from "./googleSheets";
 import { createTwiMLResponse, handleIncomingCall, processRecordingWebhook } from "./twilio";
 import multer from "multer";
@@ -24,7 +26,7 @@ const upload = multer({
   }
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: express.Express): Promise<Server> {
   
   // Initialize Google Sheets
   try {
@@ -34,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Get all load requests
-  app.get("/api/load-requests", async (req, res) => {
+  app.get("/api/load-requests", async (req: express.Request, res: express.Response) => {
     try {
       const loadRequests = await storage.getAllLoadRequests();
       res.json(loadRequests);
@@ -44,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single load request
-  app.get("/api/load-requests/:id", async (req, res) => {
+  app.get("/api/load-requests/:id", async (req: express.Request, res: express.Response) => {
     try {
       const id = parseInt(req.params.id);
       const loadRequest = await storage.getLoadRequest(id);
@@ -58,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create load request from call simulation
-  app.post("/api/simulate-call", async (req, res) => {
+  app.post("/api/simulate-call", async (req: express.Request, res: express.Response) => {
     try {
       const { phoneNumber, customerName } = req.body;
       
@@ -83,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload and process audio file
-  app.post("/api/upload-audio", upload.single('audio'), async (req, res) => {
+  app.post("/api/upload-audio", upload.single('audio'), async (req: express.Request, res: express.Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No audio file uploaded" });
@@ -184,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Approve load request
-  app.post("/api/load-requests/:id/approve", async (req, res) => {
+  app.post("/api/load-requests/:id/approve", async (req: express.Request, res: express.Response) => {
     try {
       const id = parseInt(req.params.id);
       const loadRequest = await storage.updateLoadRequestStatus(id, "approved", new Date());
@@ -204,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reject load request
-  app.post("/api/load-requests/:id/reject", async (req, res) => {
+  app.post("/api/load-requests/:id/reject", async (req: express.Request, res: express.Response) => {
     try {
       const id = parseInt(req.params.id);
       const loadRequest = await storage.updateLoadRequestStatus(id, "rejected", new Date());
@@ -224,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all call logs
-  app.get("/api/call-logs", async (req, res) => {
+  app.get("/api/call-logs", async (req: express.Request, res: express.Response) => {
     try {
       const callLogs = await storage.getAllCallLogs();
       res.json(callLogs);
@@ -234,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Twilio webhook for incoming calls
-  app.post("/api/twilio/voice", async (req, res) => {
+  app.post("/api/twilio/voice", async (req: express.Request, res: express.Response) => {
     try {
       console.log("Incoming twilio call received", req.body);
       const { From: phoneNumber, CallSid: callSid } = req.body;
@@ -267,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Twilio webhook for recording completion
-  app.post("/api/twilio/recording", async (req, res) => {
+  app.post("/api/twilio/recording", async (req: express.Request, res: express.Response) => {
     try {
       console.log("Incoming twilio recording received", req.body);
       const { 
@@ -310,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get dashboard metrics
-  app.get("/api/metrics", async (req, res) => {
+  app.get("/api/metrics", async (req: express.Request, res: express.Response) => {
     try {
       const loadRequests = await storage.getAllLoadRequests();
       const callLogs = await storage.getAllCallLogs();
