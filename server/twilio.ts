@@ -20,6 +20,35 @@ export function getTwilioClient(): ReturnType<typeof twilio> {
   return client;
 }
 
+// Test function for processRecordingWebhook
+export async function testProcessRecording() {
+  try {
+    // Sample test data - replace these with actual values when testing
+    const testRecordingUrl = '';
+    const testRecordingSid = process.env.TWILIO_TEST_RECORDING_SID;
+    const testCallSid = process.env.TWILIO_TEST_CALL_SID;
+    const testDuration = 30;
+
+    if (!testRecordingSid || !testCallSid) {
+      throw new Error('Missing required environment variables: TWILIO_TEST_RECORDING_SID and TWILIO_TEST_CALL_SID must be set');
+    }
+
+    console.log('Starting test recording processing...');
+    const result = await processRecordingWebhook(
+      testRecordingUrl,
+      testRecordingSid,
+      testCallSid,
+      testDuration
+    );
+
+    console.log('Test recording processing completed successfully:', JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error('Test recording processing failed:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
 export function createTwiMLResponse() {
   return new twilio.twiml.VoiceResponse();
 }
@@ -88,8 +117,8 @@ export async function processRecordingWebhook(
     console.log(`Audio path: ${audioPath}`);
     
     // Save audio file temporarily
-    const fs = require('fs');
-    fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
+    const fs = await import('fs/promises');
+    await fs.writeFile(audioPath, Buffer.from(audioBuffer));
     console.log(`Audio file saved to: ${audioPath}`);
     
     // Transcribe the actual audio using OpenAI Whisper
@@ -105,8 +134,9 @@ export async function processRecordingWebhook(
       throw new Error(`Failed to transcribe audio: ${transcriptionError instanceof Error ? transcriptionError.message : 'Unknown error'}`);
     }
     
-    // Clean up temporary file
-    fs.unlinkSync(audioPath);
+    // Delete the temporary file
+    await fs.unlink(audioPath);
+    console.log(`Deleted temporary file: ${audioPath}`);
 
     // Extract load information using AI from the real transcription
     console.log(`Extracting load info from transcription...`);

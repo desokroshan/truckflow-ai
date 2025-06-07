@@ -29,6 +29,41 @@ const upload = multer({
 export async function registerRoutes(app: express.Express): Promise<Server> {
   
   // Initialize Google Sheets
+  
+  // Test endpoint for recording processing
+  app.post('/api/test/recording', async (req, res) => {
+    try {
+      console.log(`Test recording received: ${JSON.stringify(req.body, null, 2)}`);
+      const { RecordingUrl, RecordingSid, CallSid, RecordingDuration } = req.body;
+      
+      if (!RecordingUrl || !RecordingSid || !CallSid || !RecordingDuration) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      // Convert RecordingDuration to number
+      const duration = parseInt(RecordingDuration, 10);
+      if (isNaN(duration)) {
+        return res.status(400).json({ error: 'Invalid RecordingDuration' });
+      }
+
+      // Simulate the recording webhook processing
+      const result = await processRecordingWebhook(
+        RecordingUrl,
+        RecordingSid,
+        CallSid,
+        duration
+      );
+
+      console.log(`Test recording processed successfully: ${JSON.stringify(result, null, 2)}`);
+      
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('Error processing test recording:', error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error occurred' });
+    }
+  });
+
+  // Initialize Google Sheets
   try {
     await initializeGoogleSheet();
   } catch (error) {

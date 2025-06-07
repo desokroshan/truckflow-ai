@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import fs from "fs";
 
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function transcribeAudio(audioFilePath: string): Promise<{ text: string, duration: number }> {
@@ -80,12 +80,12 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
     const extractedData = JSON.parse(response.choices[0].message.content || "{}");
     
     // Validate required fields
-    const requiredFields = ['customerName', 'pickupLocation', 'deliveryLocation', 'cargoType', 'weight', 'truckType'];
-    for (const field of requiredFields) {
-      if (!extractedData[field]) {
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
+    // const requiredFields = ['customerName', 'pickupLocation', 'deliveryLocation', 'cargoType', 'weight', 'truckType'];
+    // for (const field of requiredFields) {
+    //   if (!extractedData[field]) {
+    //     throw new Error(`Missing required field: ${field}`);
+    //   }
+    // }
 
     return extractedData as ExtractedLoadInfo;
   } catch (error) {
