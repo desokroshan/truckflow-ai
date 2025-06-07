@@ -19,14 +19,32 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 
 console.log(`Account SID from index: ${accountSid}`);
 console.log(`Auth Token from index: ${authToken}`);
-if (!accountSid || !authToken) {
-  throw new Error('TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in .env file');
+
+// Initialize clients - only initialize what we have credentials for
+let twilioClient;
+if (accountSid && authToken) {
+  twilioClient = initializeTwilio(accountSid, authToken);
+  console.log('Twilio client initialized');
+} else {
+  console.log('Twilio credentials not found - some features will be disabled');
 }
 
-// Initialize Twilio client after environment variables are loaded
-const twilioClient = initializeTwilio(accountSid, authToken);
-const openaiClient = initializeOpenAI(openaiApiKey!);
-const googleSheetsClient = initializeGoogleSheetsClient(sheetId!, clientEmail!, privateKey!.replace(/\n/g, '\n'));
+let openaiClient;
+if (openaiApiKey) {
+  openaiClient = initializeOpenAI(openaiApiKey);
+  console.log('OpenAI client initialized');
+} else {
+  console.log('OpenAI API key not found - AI features will be disabled');
+}
+
+let googleSheetsClient;
+if (sheetId && clientEmail && privateKey) {
+  googleSheetsClient = initializeGoogleSheetsClient(sheetId, clientEmail, privateKey.replace(/\\n/g, '\n'));
+  console.log('Google Sheets client initialized');
+} else {
+  console.log('Google Sheets credentials not found - spreadsheet integration will be disabled');
+}
+
 const emailClient = initializeEmailClient();
 
 const app = express();
