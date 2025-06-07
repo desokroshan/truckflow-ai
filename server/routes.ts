@@ -134,8 +134,8 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       // Extract load information using GPT-4
       const extractedData = await extractLoadInfo(transcription);
       
-      // Generate load ID
-      const loadId = `TF-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+      // Generate load ID for Expedite Transport
+      const loadId = `EXT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
       
       // Create load request
       const loadRequest = await storage.createLoadRequest({
@@ -283,9 +283,9 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       const twiml = createTwiMLResponse();
       
       twiml.say({
-        voice: "alice",
+        voice: "Polly.Joanna-Neural",
         language: "en-US"
-      }, "Thank you for calling TruckFlow Logistics. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.");
+      }, "Thank you for calling Expedite Transport. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.");
       
       // Record the conversation
       twiml.record({
@@ -332,9 +332,9 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       // Respond to caller
       const twiml = createTwiMLResponse();
       twiml.say({
-        voice: "alice",
+        voice: "Polly.Joanna-Neural",
         language: "en-US"
-      }, "Thank you for your request. I'm processing your information and will send the details to our dispatch team. You should receive a confirmation within 15 minutes. Have a great day!");
+      }, "Thank you for choosing Expedite Transport. I'm processing your information and will send the details to our dispatch team. You should receive a confirmation within 15 minutes for your expedited shipment. Have a great day!");
       
       twiml.hangup();
       

@@ -18,12 +18,12 @@ export default function Dashboard() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Truck className="text-white text-lg" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-slate-900">TruckFlow AI</h1>
-                  <p className="text-xs text-slate-500">Automated Load Management</p>
+                  <h1 className="text-xl font-bold text-slate-900">Expedite Transport</h1>
+                  <p className="text-xs text-slate-500">AI-Powered Load Management</p>
                 </div>
               </div>
             </div>

@@ -101,7 +101,7 @@ export default function TwilioSetup() {
             <div className="text-sm text-slate-600">
               In your Twilio Console, go to Phone Numbers → Manage → Active numbers → [Your Number]
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium">Voice Webhook URL:</Label>
               <div className="flex items-center space-x-2">

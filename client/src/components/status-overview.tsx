@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, Package, Clock, DollarSign } from "lucide-react";
 
 interface Metrics {
@@ -53,6 +53,9 @@ export default function StatusOverview() {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {statsCards.map((stat, index) => (
         <Card key={index} className="border border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Expedite Transport Operations</CardTitle>
+          </CardHeader>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>

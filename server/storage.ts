@@ -1,17 +1,18 @@
 import { users, loadRequests, callLogs, type User, type InsertUser, type LoadRequest, type InsertLoadRequest, type CallLog, type InsertCallLog } from "@shared/schema";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Load requests
   getLoadRequest(id: number): Promise<LoadRequest | undefined>;
   getLoadRequestByLoadId(loadId: string): Promise<LoadRequest | undefined>;
   getAllLoadRequests(): Promise<LoadRequest[]>;
   createLoadRequest(loadRequest: InsertLoadRequest): Promise<LoadRequest>;
   updateLoadRequestStatus(id: number, status: string, approvedAt?: Date): Promise<LoadRequest | undefined>;
-  
+
   // Call logs
   getCallLog(id: number): Promise<CallLog | undefined>;
   getAllCallLogs(): Promise<CallLog[]>;
@@ -71,9 +72,12 @@ export class MemStorage implements IStorage {
 
   async createLoadRequest(insertLoadRequest: InsertLoadRequest): Promise<LoadRequest> {
     const id = this.currentLoadRequestId++;
+    // Generate unique load ID
+    const loadId = `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
     const loadRequest: LoadRequest = {
       ...insertLoadRequest,
       id,
+      loadId,
       createdAt: new Date(),
       approvedAt: null,
     };

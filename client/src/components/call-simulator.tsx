@@ -27,7 +27,7 @@ export default function CallSimulator() {
     onSuccess: () => {
       setCallActive(true);
       setCallDuration(0);
-      
+
       // Simulate call duration counter
       const interval = setInterval(() => {
         setCallDuration(prev => {
@@ -64,7 +64,7 @@ export default function CallSimulator() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('audio', file);
-      
+
       return await fetch('/api/upload-audio', {
         method: 'POST',
         body: formData,
@@ -126,7 +126,7 @@ export default function CallSimulator() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Call Simulation Interface</CardTitle>
+          <CardTitle className="text-lg font-semibold">Audio Processing</CardTitle>
           <Badge variant={callActive ? "destructive" : "secondary"}>
             {callActive ? "Live" : "Ready"}
           </Badge>
@@ -142,7 +142,7 @@ export default function CallSimulator() {
               <Phone className="text-white text-2xl" />
             </div>
           </div>
-          
+
           <div className="text-center mb-6">
             <p className="text-lg font-medium text-slate-900 mb-2">
               {callActive ? "Call in Progress" : "Incoming Call"}
