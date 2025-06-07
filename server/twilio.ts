@@ -93,13 +93,7 @@ export async function processRecordingWebhook(
     const phoneNumber = callData.from;
     console.log(`Phone number: ${phoneNumber}`);
     
-    // Download and transcribe the actual audio recording
-    // Construct the correct Twilio recording URL
-    const twilioBaseUrl = 'https://api.twilio.com/2010-04-01/Accounts';
-    const recordingUrl = `${twilioBaseUrl}/${process.env.TWILIO_ACCOUNT_SID}/Recordings/${recordingSid}.mp3`;
-    console.log(`Downloading audio from: ${recordingUrl}`);
-    
-    const response = await fetch(recordingUrl, {
+    const response = await fetch(audioUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
