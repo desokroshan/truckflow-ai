@@ -1,14 +1,28 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER || process.env.EMAIL_USER || "default_user",
-    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || "default_pass",
-  },
-});
+let transporter: nodemailer.Transporter;
+
+export function initializeEmailClient() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER || process.env.EMAIL_USER || "default_user",
+        pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || "default_pass",
+      },
+    });
+  }
+  return transporter;
+}
+
+export function getEmailClient() {
+  if (!transporter) {
+    throw new Error('Email client not initialized. Call initializeEmailClient() first.');
+  }
+  return transporter;
+}
 
 interface LoadNotificationData {
   loadId: string;
@@ -85,7 +99,7 @@ export async function sendOwnerNotification(
       html: emailHtml,
     };
 
-    await transporter.sendMail(mailOptions);
+    await getEmailClient().sendMail(mailOptions);
     console.log(`Notification email sent to ${ownerEmail} for load ${loadData.loadId}`);
   } catch (error) {
     console.error("Error sending email notification:", error);

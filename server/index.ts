@@ -3,12 +3,18 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import * as dotenv from 'dotenv';
 import { initializeTwilio } from './twilio';
+import { initializeEmailClient } from './email';
+import { initializeGoogleSheetsClient } from './googleSheets';
 
 // Load environment variables
 dotenv.config();
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
+const sheetId = process.env.GOOGLE_SHEETS_ID;
+const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
+const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
+
 console.log(`Account SID from index: ${accountSid}`);
 console.log(`Auth Token from index: ${authToken}`);
 if (!accountSid || !authToken) {
@@ -17,6 +23,8 @@ if (!accountSid || !authToken) {
 
 // Initialize Twilio client after environment variables are loaded
 const twilioClient = initializeTwilio(accountSid, authToken);
+const googleSheetsClient = initializeGoogleSheetsClient(sheetId!, clientEmail!, privateKey!.replace(/\\n/g, '\n'));
+const emailClient = initializeEmailClient();
 
 const app = express();
 app.use(express.json());

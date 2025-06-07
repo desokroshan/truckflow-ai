@@ -1,51 +1,71 @@
 import { google } from "googleapis";
 import type { LoadRequest } from "@shared/schema";
 
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  },
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-});
-
-const sheets = google.sheets({ version: "v4", auth });
-
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || process.env.GOOGLE_SPREADSHEET_ID || "default_sheet_id";
+let sheets: ReturnType<typeof google.sheets>;
+let SPREADSHEET_ID: string | undefined;
 const SHEET_NAME = "Load_Requests";
+
+export function initializeGoogleSheetsClient(sheetId: string, client_email: string, private_key: string): void {
+  // Initialize Google Sheets client with environment variables
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email,
+      private_key,
+    },
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  sheets = google.sheets({ version: "v4", auth });
+  SPREADSHEET_ID = sheetId;
+  
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID environment variable is required');
+  }
+}
+
+// Initialize client when module is loaded
+//initializeGoogleSheetsClient(process.env.GOOGLE_SHEETS_ID!, process.env.GOOGLE_SHEETS_CLIENT_EMAIL!, process.env.GOOGLE_SHEETS_PRIVATE_KEY!.replace(/\\n/g, '\n'));
 
 export async function saveLoadToGoogleSheets(loadRequest: LoadRequest): Promise<void> {
   try {
-    const values = [
-      [
-        loadRequest.loadId,
-        loadRequest.customerName,
-        loadRequest.customerPhone,
-        loadRequest.pickupLocation,
-        loadRequest.pickupAddress,
-        loadRequest.deliveryLocation,
-        loadRequest.deliveryAddress,
-        loadRequest.cargoType,
-        loadRequest.weight,
-        loadRequest.truckType,
-        loadRequest.pickupTime || "",
-        loadRequest.deliveryTime || "",
-        loadRequest.deadline || "",
-        loadRequest.status,
-        loadRequest.createdAt?.toISOString() || new Date().toISOString(),
-        loadRequest.approvedAt?.toISOString() || "",
-      ]
+    console.log('Attempting to save to Google Sheets');
+    console.log('Spreadsheet ID:', SPREADSHEET_ID);
+    console.log('Sheet Name:', SHEET_NAME);
+    
+    // First check if we can access the spreadsheet
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID
+    });
+    console.log('Successfully accessed spreadsheet:', spreadsheet.data.properties?.title);
+
+    // Prepare the row data
+    const rowData = [
+      loadRequest.loadId,
+      loadRequest.pickupLocation,
+      loadRequest.deliveryLocation,
+      loadRequest.customerPhone,
+      loadRequest.cargoType,
+      loadRequest.weight,
+      loadRequest.truckType,
+      loadRequest.pickupTime || "",
+      loadRequest.deliveryTime || "",
+      loadRequest.deadline || "",
+      loadRequest.status,
+      loadRequest.createdAt?.toISOString() || new Date().toISOString(),
+      loadRequest.approvedAt?.toISOString() || "",
     ];
 
+    // Try to append values
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:P`,
+      range: `${SHEET_NAME}!A:Q`,
       valueInputOption: "RAW",
       requestBody: {
-        values,
+        values: [rowData],
       },
     });
 
+    console.log('Successfully appended row to Google Sheets');
     console.log(`Load ${loadRequest.loadId} saved to Google Sheets`);
   } catch (error) {
     console.error("Error saving to Google Sheets:", error);
@@ -72,9 +92,7 @@ export async function initializeGoogleSheet(): Promise<void> {
       "Customer Name", 
       "Customer Phone",
       "Pickup Location",
-      "Pickup Address",
       "Delivery Location",
-      "Delivery Address",
       "Cargo Type",
       "Weight",
       "Truck Type",
