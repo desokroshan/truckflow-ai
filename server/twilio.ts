@@ -5,9 +5,20 @@ import { sendOwnerNotification, sendOwnerSMS } from './email';
 import { saveLoadToGoogleSheets } from './googleSheets';
 import { nanoid } from 'nanoid';
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
+let client: ReturnType<typeof twilio>;
+
+export function initializeTwilio(accountSid: string, authToken: string) {
+  client = twilio(accountSid, authToken);
+  return client;
+}
+
+// Export the client as a getter
+export function getTwilioClient(): ReturnType<typeof twilio> {
+  if (!client) {
+    throw new Error('Twilio client not initialized. Call initializeTwilio() first.');
+  }
+  return client;
+}
 
 export function createTwiMLResponse() {
   return new twilio.twiml.VoiceResponse();
@@ -40,34 +51,46 @@ export async function processRecordingWebhook(
   duration: number
 ) {
   try {
-    console.log(`Processing recording: ${recordingSid} for call: ${callSid}`);
+    console.log(`Processing recording from twilio: ${recordingSid} for call: ${callSid}`);
     
     // Download the recording
-    const recordingData = await client.recordings(recordingSid).fetch();
+    const recordingData = await getTwilioClient().recordings(recordingSid).fetch();
+    console.log(`Recording data is: ${JSON.stringify(recordingData, null, 2)}`);
     const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.mp3')}`;
+    console.log(`Recording URL: ${audioUrl}`);
     
     // Get the phone number from the call
-    const callData = await client.calls(callSid).fetch();
+    const callData = await getTwilioClient().calls(callSid).fetch();
     const phoneNumber = callData.from;
+    console.log(`Phone number: ${phoneNumber}`);
     
     // Download and transcribe the actual audio recording
-    console.log(`Downloading audio from: ${audioUrl}`);
-    const response = await fetch(audioUrl, {
+    // Construct the correct Twilio recording URL
+    const twilioBaseUrl = 'https://api.twilio.com/2010-04-01/Accounts';
+    const recordingUrl = `${twilioBaseUrl}/${process.env.TWILIO_ACCOUNT_SID}/Recordings/${recordingSid}.mp3`;
+    console.log(`Downloading audio from: ${recordingUrl}`);
+    
+    const response = await fetch(recordingUrl, {
+      method: 'GET',
       headers: {
-        'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+        'Accept': 'audio/mpeg'
       }
     });
     
     if (!response.ok) {
+      console.log(`Failed to download recording: ${response.statusText}`);
       throw new Error(`Failed to download recording: ${response.statusText}`);
     }
     
     const audioBuffer = await response.arrayBuffer();
     const audioPath = `uploads/recording_${recordingSid}.mp3`;
+    console.log(`Audio path: ${audioPath}`);
     
     // Save audio file temporarily
     const fs = require('fs');
     fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
+    console.log(`Audio file saved to: ${audioPath}`);
     
     // Transcribe the actual audio using OpenAI Whisper
     console.log(`Transcribing audio file: ${audioPath}`);

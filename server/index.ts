@@ -1,6 +1,22 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import * as dotenv from 'dotenv';
+import { initializeTwilio } from './twilio';
+
+// Load environment variables
+dotenv.config();
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+console.log(`Account SID from index: ${accountSid}`);
+console.log(`Auth Token from index: ${authToken}`);
+if (!accountSid || !authToken) {
+  throw new Error('TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in .env file');
+}
+
+// Initialize Twilio client after environment variables are loaded
+const twilioClient = initializeTwilio(accountSid, authToken);
 
 const app = express();
 app.use(express.json());
@@ -37,7 +53,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log("Registering routes")
   const server = await registerRoutes(app);
+  console.log("Server registered successfully")
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -55,6 +73,7 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
+  console.log("vite setup done")
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
@@ -63,7 +82,6 @@ app.use((req, res, next) => {
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });

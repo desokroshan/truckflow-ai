@@ -1,4 +1,3 @@
-import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertLoadRequestSchema, insertCallLogSchema } from "@shared/schema";
@@ -31,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   try {
     await initializeGoogleSheet();
   } catch (error) {
-    console.error("Failed to initialize Google Sheets:", error);
+    console.error("Failed to initialize Google Sheets:");
   }
 
   // Get all load requests
@@ -237,6 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Twilio webhook for incoming calls
   app.post("/api/twilio/voice", async (req, res) => {
     try {
+      console.log("Incoming twilio call received", req.body);
       const { From: phoneNumber, CallSid: callSid } = req.body;
       
       // Handle incoming call
@@ -269,12 +269,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Twilio webhook for recording completion
   app.post("/api/twilio/recording", async (req, res) => {
     try {
+      console.log("Incoming twilio recording received", req.body);
       const { 
         RecordingUrl: recordingUrl,
         RecordingSid: recordingSid, 
         CallSid: callSid,
         RecordingDuration: duration 
       } = req.body;
+
+      console.log("Recording SID:", recordingSid);
+      console.log("Recording URL:", recordingUrl);
+      console.log("Call SID:", callSid);
+      console.log("Recording duration:", duration); 
       
       // Process the recording asynchronously
       processRecordingWebhook(
