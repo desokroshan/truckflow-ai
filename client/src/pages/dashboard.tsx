@@ -41,16 +41,16 @@ export default function Dashboard() {
         {/* Status Overview */}
         <StatusOverview />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
-          {/* Side Panel */}
-          <div className="lg:col-span-1 space-y-6">
-            <NotificationPanel />
-          </div>
-        </div>
-
-        {/* Load Dashboard */}
+        {/* Load Dashboard - positioned right after status tiles */}
         <div className="mt-8">
           <LoadDashboard />
+        </div>
+
+        {/* Right-aligned sections */}
+        <div className="flex justify-end mt-8">
+          <div className="w-full max-w-md space-y-6">
+            <NotificationPanel />
+          </div>
         </div>
       </div>
     </div>
