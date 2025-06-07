@@ -2,6 +2,7 @@ import { useState } from "react";
 import StatusOverview from "@/components/status-overview";
 import LoadDashboard from "@/components/load-dashboard-new";
 import NotificationPanel from "@/components/notification-panel";
+import AIProcessing from "@/components/ai-processing";
 import { Truck, Settings } from "lucide-react";
 
 export default function Dashboard() {
@@ -46,9 +47,15 @@ export default function Dashboard() {
           <LoadDashboard />
         </div>
 
-        {/* Right-aligned sections */}
-        <div className="flex justify-end mt-8">
-          <div className="w-full max-w-md space-y-6">
+        {/* AI Processing and Notification Panel - side by side layout */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* AI Processing - takes up half the screen */}
+          <div className="lg:col-span-1">
+            <AIProcessing />
+          </div>
+          
+          {/* Notifications - on the right side */}
+          <div className="lg:col-span-1">
             <NotificationPanel />
           </div>
         </div>
