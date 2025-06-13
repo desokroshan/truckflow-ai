@@ -6,7 +6,7 @@ import { sendOwnerNotification, sendOwnerSMS } from "./email";
 import express from "express";
 import { Express } from "express";
 import { saveLoadToGoogleSheets, updateLoadStatusInGoogleSheets, initializeGoogleSheet } from "./googleSheets";
-import { createTwiMLResponse, handleIncomingCall, processRecordingWebhook } from "./twilio";
+import { createTwiMLResponse, createSMSTwiMLResponse, handleIncomingCall, processRecordingWebhook, processSMSWebhook } from "./twilio";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -343,6 +343,37 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error("Error handling Twilio voice webhook:", error);
       res.status(500).send("Error processing call");
+    }
+  });
+
+  // Twilio webhook for SMS messages
+  app.post("/api/twilio/sms", async (req: express.Request, res: express.Response) => {
+    try {
+      console.log("Incoming SMS received", req.body);
+      const { 
+        From: phoneNumber,
+        Body: messageBody,
+        MessageSid: messageSid
+      } = req.body;
+
+      console.log("SMS from:", phoneNumber);
+      console.log("Message body:", messageBody);
+      console.log("Message SID:", messageSid);
+      
+      // Process the SMS asynchronously
+      processSMSWebhook(phoneNumber, messageBody, messageSid).catch(error => {
+        console.error("Error processing SMS:", error);
+      });
+      
+      // Respond with TwiML to send confirmation SMS
+      const twiml = createSMSTwiMLResponse();
+      twiml.message("Thank you for your load request! 🚛 We're processing your shipping details and will send them to our dispatch team. You'll receive a confirmation within 15 minutes. - Expedite Transport");
+      
+      res.type('text/xml');
+      res.send(twiml.toString());
+    } catch (error) {
+      console.error("Error handling SMS webhook:", error);
+      res.status(500).send("Error processing SMS");
     }
   });
 

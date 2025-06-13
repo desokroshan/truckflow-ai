@@ -53,6 +53,10 @@ export function createTwiMLResponse() {
   return new twilio.twiml.VoiceResponse();
 }
 
+export function createSMSTwiMLResponse() {
+  return new twilio.twiml.MessagingResponse();
+}
+
 export async function handleIncomingCall(phoneNumber: string, callSid: string) {
   try {
     // Create call log entry
@@ -69,6 +73,103 @@ export async function handleIncomingCall(phoneNumber: string, callSid: string) {
     return callLog;
   } catch (error) {
     console.error("Error handling incoming call:", error);
+    throw error;
+  }
+}
+
+export async function processSMSWebhook(
+  phoneNumber: string,
+  messageBody: string,
+  messageSid: string
+) {
+  try {
+    console.log(`Processing SMS from ${phoneNumber}: ${messageBody}`);
+    
+    // Create call log entry for SMS
+    const callLog = await storage.createCallLog({
+      phoneNumber,
+      duration: 0,
+      status: "sms_received",
+      transcription: messageBody,
+      audioFileUrl: null,
+      loadRequestId: null,
+    });
+
+    // Extract load information using AI from the SMS text
+    console.log(`Extracting load info from SMS text...`);
+    const extractedData = await extractLoadInfo(messageBody);
+    console.log(`Extracted data:`, JSON.stringify(extractedData, null, 2));
+    
+    // Generate unique load ID
+    const loadId = `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
+    
+    // Create load request
+    const loadRequest = await storage.createLoadRequest({
+      loadId,
+      customerName: extractedData.customerName,
+      customerPhone: extractedData.customerPhone || phoneNumber,
+      pickupLocation: extractedData.pickupLocation,
+      pickupAddress: extractedData.pickupAddress,
+      deliveryLocation: extractedData.deliveryLocation,
+      deliveryAddress: extractedData.deliveryAddress,
+      cargoType: extractedData.cargoType,
+      weight: extractedData.weight,
+      truckType: extractedData.truckType,
+      pickupTime: extractedData.pickupTime,
+      deliveryTime: extractedData.deliveryTime,
+      deadline: extractedData.deadline,
+      status: "pending",
+      transcription: messageBody,
+      extractedData: JSON.stringify(extractedData),
+      notificationSent: false,
+    });
+
+    // Update call log with load request reference
+    await storage.updateCallLogTranscription(callLog.id, messageBody);
+
+    // Save to Google Sheets (will log error if not configured)
+    try {
+      await saveLoadToGoogleSheets(loadRequest);
+    } catch (error) {
+      console.log("Google Sheets not configured, skipping...");
+    }
+
+    // Generate summary and send notifications
+    const summary = await generateLoadSummary(extractedData);
+    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+    const approveUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/approve`;
+    const rejectUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/reject`;
+
+    await sendOwnerNotification(
+      process.env.OWNER_EMAIL || "owner@trucking.com",
+      {
+        loadId: loadRequest.loadId,
+        customerName: extractedData.customerName,
+        customerPhone: extractedData.customerPhone || phoneNumber,
+        route: `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`,
+        cargoType: extractedData.cargoType,
+        weight: extractedData.weight,
+        truckType: extractedData.truckType,
+        deadline: extractedData.deadline,
+        summary,
+      },
+      approveUrl,
+      rejectUrl
+    );
+
+    // Send SMS notification to owner
+    await sendOwnerSMS(
+      process.env.OWNER_PHONE || "+1 (555) 999-8888",
+      loadRequest.loadId,
+      extractedData.customerName,
+      `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`
+    );
+
+    console.log(`Load request ${loadRequest.loadId} created from SMS ${messageSid}`);
+    return loadRequest;
+
+  } catch (error) {
+    console.error("Error processing SMS:", error);
     throw error;
   }
 }
@@ -138,7 +239,7 @@ export async function processRecordingWebhook(
     console.log(`Extracted data:`, JSON.stringify(extractedData, null, 2));
     
     // Generate unique load ID
-    const loadId = `TF-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
+    const loadId = `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
     
     // Create load request
     const loadRequest = await storage.createLoadRequest({
