@@ -45,15 +45,30 @@ export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise
     });
     console.log('Successfully accessed spreadsheet:', spreadsheet.data.properties?.title);
 
-    // Prepare the row data
+    // Debug: Log the load request data being processed
+    console.log('Load request data being saved:', {
+      loadId: loadRequest.loadId,
+      customerName: loadRequest.customerName,
+      customerPhone: loadRequest.customerPhone,
+      pickupLocation: loadRequest.pickupLocation,
+      deliveryLocation: loadRequest.deliveryLocation,
+      cargoType: loadRequest.cargoType,
+      weight: loadRequest.weight,
+      truckType: loadRequest.truckType,
+    });
+
+    // Prepare the row data to match header order exactly
+    // Headers: Load ID, Customer Name, Customer Phone, Pickup Location, Delivery Location, 
+    //          Cargo Type, Weight, Truck Type, Pickup Time, Delivery Time, Deadline, Status, Created At, Approved At
     const rowData = [
       loadRequest.loadId,
-      loadRequest.pickupLocation,
-      loadRequest.deliveryLocation,
-      loadRequest.customerPhone,
-      loadRequest.cargoType,
-      loadRequest.weight,
-      loadRequest.truckType,
+      loadRequest.customerName || "",
+      loadRequest.customerPhone || "",
+      loadRequest.pickupLocation || "",
+      loadRequest.deliveryLocation || "",
+      loadRequest.cargoType || "",
+      loadRequest.weight || "",
+      loadRequest.truckType || "",
       loadRequest.pickupTime || "",
       loadRequest.deliveryTime || "",
       loadRequest.deadline || "",
@@ -61,6 +76,10 @@ export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise
       loadRequest.createdAt?.toISOString() || new Date().toISOString(),
       loadRequest.approvedAt?.toISOString() || "",
     ];
+
+    // Debug: Log the exact row data being written to Google Sheets
+    console.log('Row data being written to Google Sheets:', rowData);
+    console.log('Row data length:', rowData.length);
 
     // Try to append values
     await sheets.spreadsheets.values.append({

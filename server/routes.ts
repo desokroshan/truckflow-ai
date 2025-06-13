@@ -63,6 +63,49 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Test Google Sheets integration
+  app.post("/api/test-google-sheets", async (req: express.Request, res: express.Response) => {
+    try {
+      // Create a test load request to verify column mapping
+      const testLoadRequest = await storage.createLoadRequest({
+        loadId: `TEST-${Date.now()}`,
+        customerName: "John Smith",
+        customerPhone: "+1-555-123-4567",
+        pickupLocation: "Los Angeles, CA",
+        pickupAddress: "123 Main St, Los Angeles, CA 90210",
+        deliveryLocation: "Phoenix, AZ", 
+        deliveryAddress: "456 Oak Ave, Phoenix, AZ 85001",
+        cargoType: "Electronics",
+        weight: "15000 lbs",
+        truckType: "53ft Dry Van",
+        pickupTime: "2025-06-10 09:00",
+        deliveryTime: "2025-06-11 15:00",
+        deadline: "2025-06-11 17:00",
+        status: "pending",
+        transcription: "Test transcription for column mapping verification",
+        extractedData: JSON.stringify({
+          customerName: "John Smith",
+          customerPhone: "+1-555-123-4567",
+          pickupLocation: "Los Angeles, CA",
+          deliveryLocation: "Phoenix, AZ"
+        }),
+        notificationSent: false,
+      });
+
+      // Save to Google Sheets to test column mapping
+      await saveLoadToGoogleSheets(testLoadRequest);
+
+      res.json({ 
+        success: true, 
+        message: "Test load request created and saved to Google Sheets",
+        loadId: testLoadRequest.loadId
+      });
+    } catch (error) {
+      console.error('Error testing Google Sheets:', error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error occurred' });
+    }
+  });
+
   // Initialize Google Sheets
   try {
     await initializeGoogleSheet();
