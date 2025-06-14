@@ -7,6 +7,7 @@ import express from "express";
 import { Express } from "express";
 import { saveLoadToGoogleSheets, updateLoadStatusInGoogleSheets, initializeGoogleSheet } from "./googleSheets";
 import { createTwiMLResponse, createSMSTwiMLResponse, handleIncomingCall, processRecordingWebhook, processSMSWebhook } from "./twilio";
+import { assignmentEngine } from "./assignment";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -553,24 +554,64 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       const availableDrivers = await storage.getAvailableDrivers();
       const availableTrucks = await storage.getAvailableTrucks();
 
-      // Simple recommendation logic
-      const recommendedDriver = availableDrivers.find(driver => 
-        driver.qualification === "CDL Class A" && driver.isAvailable
-      ) || availableDrivers[0];
-
-      const recommendedTruck = availableTrucks.find(truck => 
-        truck.truckType.toLowerCase() === loadRequest.truckType.toLowerCase() && truck.isAvailable
-      ) || availableTrucks[0];
+      // Use assignment engine for recommendations
+      const recommendation = await assignmentEngine.getRecommendations(loadRequest);
 
       res.json({
-        recommendedDriver,
-        recommendedTruck,
+        recommendedDriver: recommendation.recommendedDriver,
+        recommendedTruck: recommendation.recommendedTruck,
         availableDrivers,
-        availableTrucks
+        availableTrucks,
+        confidence: recommendation.confidence,
+        reason: recommendation.reason
       });
     } catch (error) {
       console.error("Error getting recommendations:", error);
       res.status(500).json({ error: "Failed to get recommendations" });
+    }
+  });
+
+  // Auto-assign route
+  app.post("/api/load-requests/:id/auto-assign", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const loadRequestId = parseInt(id);
+      
+      const assignment = await assignmentEngine.autoAssign(loadRequestId);
+      
+      if (!assignment) {
+        return res.status(400).json({ error: "Unable to auto-assign: no available drivers or trucks" });
+      }
+
+      res.json({
+        message: "Auto-assignment successful",
+        assignment
+      });
+    } catch (error) {
+      console.error("Error auto-assigning:", error);
+      res.status(500).json({ error: "Failed to auto-assign" });
+    }
+  });
+
+  // Complete assignment route
+  app.post("/api/assignments/:id/complete", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const assignmentId = parseInt(id);
+      
+      const assignment = await assignmentEngine.completeAssignment(assignmentId);
+      
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+
+      res.json({
+        message: "Assignment completed successfully",
+        assignment
+      });
+    } catch (error) {
+      console.error("Error completing assignment:", error);
+      res.status(500).json({ error: "Failed to complete assignment" });
     }
   });
 

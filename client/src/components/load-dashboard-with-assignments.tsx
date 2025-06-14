@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,12 +111,30 @@ export function LoadDashboardWithAssignments() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["load-requests"] });
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
       queryClient.invalidateQueries({ queryKey: ["trucks"] });
       setIsAssignmentDialogOpen(false);
       setSelectedLoad(null);
       toast({ title: "Assignment created successfully" });
+    },
+  });
+
+  // Auto-assign mutation
+  const autoAssignMutation = useMutation({
+    mutationFn: async (loadRequestId: number) => {
+      const response = await fetch(`/api/load-requests/${loadRequestId}/auto-assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to auto-assign");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["load-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      toast({ title: "Auto-assignment successful" });
     },
   });
 
@@ -157,13 +174,13 @@ export function LoadDashboardWithAssignments() {
 
   const handleAssignmentSubmit = () => {
     if (!selectedLoad) return;
-    
+
     const assignmentData = {
       loadRequestId: selectedLoad.id,
       driverId: selectedDriverId ? parseInt(selectedDriverId) : undefined,
       truckId: selectedTruckId ? parseInt(selectedTruckId) : undefined,
     };
-    
+
     createAssignmentMutation.mutate(assignmentData);
   };
 
@@ -297,7 +314,7 @@ export function LoadDashboardWithAssignments() {
           <DialogHeader>
             <DialogTitle>Assign Driver & Truck - {selectedLoad?.loadId}</DialogTitle>
           </DialogHeader>
-          
+
           {selectedLoad && (
             <div className="space-y-6">
               {/* Load Details */}
@@ -361,7 +378,7 @@ export function LoadDashboardWithAssignments() {
                           </div>
                         </div>
                       )}
-                      
+
                       <div>
                         <Label htmlFor="driver-select">Select Driver</Label>
                         <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
@@ -405,7 +422,7 @@ export function LoadDashboardWithAssignments() {
                           </div>
                         </div>
                       )}
-                      
+
                       <div>
                         <Label htmlFor="truck-select">Select Truck</Label>
                         <Select value={selectedTruckId} onValueChange={setSelectedTruckId}>

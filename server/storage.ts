@@ -279,6 +279,18 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async updateAssignmentStatus(id: number, status: string): Promise<Assignment | undefined> {
+    const assignment = this.assignments.get(id);
+    if (!assignment) return undefined;
+
+    const updated: Assignment = {
+      ...assignment,
+      status,
+    };
+    this.assignments.set(id, updated);
+    return updated;
+  }
+
   private initializeSampleData() {
     // Sample drivers
     this.createDriver({
