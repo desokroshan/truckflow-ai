@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LoadDashboard } from "@/components/load-dashboard";
+import LoadDashboard from "@/components/load-dashboard";
 import { LoadDashboardWithAssignments } from "@/components/load-dashboard-with-assignments";
 import { FleetManagement } from "@/components/fleet-management";
 import { StatusOverview } from "@/components/status-overview";
