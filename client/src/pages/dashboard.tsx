@@ -3,7 +3,7 @@ import { LoadDashboard } from "@/components/load-dashboard";
 import { LoadDashboardWithAssignments } from "@/components/load-dashboard-with-assignments";
 import { FleetManagement } from "@/components/fleet-management";
 import { StatusOverview } from "@/components/status-overview";
-import { AIProcessing } from "@/components/ai-processing";
+import AIProcessing from "@/components/ai-processing";
 import { CallSimulator } from "@/components/call-simulator";
 import { TwilioSetup } from "@/components/twilio-setup";
 import { NotificationPanel } from "@/components/notification-panel";
