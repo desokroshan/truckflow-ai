@@ -27,15 +27,15 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: express.Express): Promise<Server> {
-  
+
   // Initialize Google Sheets
-  
+
   // Test endpoint for recording processing
   app.post('/api/test/recording', async (req, res) => {
     try {
       console.log(`Test recording received: ${JSON.stringify(req.body, null, 2)}`);
       const { RecordingUrl, RecordingSid, CallSid, RecordingDuration } = req.body;
-      
+
       if (!RecordingUrl || !RecordingSid || !CallSid || !RecordingDuration) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
@@ -55,7 +55,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       );
 
       console.log(`Test recording processed successfully: ${JSON.stringify(result, null, 2)}`);
-      
+
       res.json({ success: true, result });
     } catch (error) {
       console.error('Error processing test recording:', error);
@@ -141,7 +141,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   app.post("/api/simulate-call", async (req: express.Request, res: express.Response) => {
     try {
       const { phoneNumber, customerName } = req.body;
-      
+
       // Create call log
       const callLog = await storage.createCallLog({
         phoneNumber: phoneNumber || "+1 (555) 123-4567",
@@ -170,16 +170,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       }
 
       const audioFilePath = req.file.path;
-      
+
       // Transcribe audio using OpenAI Whisper
       const { text: transcription, duration } = await transcribeAudio(audioFilePath);
-      
+
       // Extract load information using GPT-4
       const extractedData = await extractLoadInfo(transcription);
-      
+
       // Generate load ID for Expedite Transport
       const loadId = `EXT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
-      
+
       // Create load request
       const loadRequest = await storage.createLoadRequest({
         loadId,
@@ -268,7 +268,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loadRequest = await storage.updateLoadRequestStatus(id, "approved", new Date());
-      
+
       if (!loadRequest) {
         return res.status(404).json({ error: "Load request not found" });
       }
@@ -288,7 +288,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loadRequest = await storage.updateLoadRequestStatus(id, "rejected", new Date());
-      
+
       if (!loadRequest) {
         return res.status(404).json({ error: "Load request not found" });
       }
@@ -318,18 +318,18 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     try {
       console.log("Incoming twilio call received", req.body);
       const { From: phoneNumber, CallSid: callSid } = req.body;
-      
+
       // Handle incoming call
       await handleIncomingCall(phoneNumber, callSid);
-      
+
       // Create TwiML response to handle the call
       const twiml = createTwiMLResponse();
-      
+
       twiml.say({
         voice: "Polly.Joanna-Neural",
         language: "en-US"
       }, "Thank you for calling Expedite Transport. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.");
-      
+
       // Record the conversation
       twiml.record({
         transcribe: false,
@@ -337,7 +337,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         action: `/api/twilio/recording`,
         method: "POST"
       });
-      
+
       res.type('text/xml');
       res.send(twiml.toString());
     } catch (error) {
@@ -359,16 +359,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       console.log("SMS from:", phoneNumber);
       console.log("Message body:", messageBody);
       console.log("Message SID:", messageSid);
-      
+
       // Process the SMS asynchronously
       processSMSWebhook(phoneNumber, messageBody, messageSid).catch(error => {
         console.error("Error processing SMS:", error);
       });
-      
+
       // Respond with TwiML to send confirmation SMS
       const twiml = createSMSTwiMLResponse();
       twiml.message("Thank you for your load request! 🚛 We're processing your shipping details and will send them to our dispatch team. You'll receive a confirmation within 15 minutes. - Expedite Transport");
-      
+
       res.type('text/xml');
       res.send(twiml.toString());
     } catch (error) {
@@ -392,7 +392,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       console.log("Recording URL:", recordingUrl);
       console.log("Call SID:", callSid);
       console.log("Recording duration:", duration); 
-      
+
       // Process the recording asynchronously
       processRecordingWebhook(
         recordingUrl,
@@ -402,16 +402,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       ).catch(error => {
         console.error("Error processing recording:", error);
       });
-      
+
       // Respond to caller
       const twiml = createTwiMLResponse();
       twiml.say({
         voice: "Polly.Joanna-Neural",
         language: "en-US"
       }, "Thank you for choosing Expedite Transport. I'm processing your information and will send the details to our dispatch team. You should receive a confirmation within 15 minutes for your expedited shipment. Have a great day!");
-      
+
       twiml.hangup();
-      
+
       res.type('text/xml');
       res.send(twiml.toString());
     } catch (error) {
@@ -420,25 +420,179 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Drivers routes
+  app.get("/api/drivers", async (req, res) => {
+    try {
+      const drivers = await storage.getAllDrivers();
+      res.json(drivers);
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+      res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
+  app.get("/api/drivers/available", async (req, res) => {
+    try {
+      const drivers = await storage.getAvailableDrivers();
+      res.json(drivers);
+    } catch (error) {
+      console.error("Error fetching available drivers:", error);
+      res.status(500).json({ error: "Failed to fetch available drivers" });
+    }
+  });
+
+  app.post("/api/drivers", async (req, res) => {
+    try {
+      const driver = await storage.createDriver(req.body);
+      res.json(driver);
+    } catch (error) {
+      console.error("Error creating driver:", error);
+      res.status(500).json({ error: "Failed to create driver" });
+    }
+  });
+
+  app.put("/api/drivers/:id/availability", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isAvailable } = req.body;
+      const driver = await storage.updateDriverAvailability(parseInt(id), isAvailable);
+      if (!driver) {
+        return res.status(404).json({ error: "Driver not found" });
+      }
+      res.json(driver);
+    } catch (error) {
+      console.error("Error updating driver availability:", error);
+      res.status(500).json({ error: "Failed to update driver availability" });
+    }
+  });
+
+  // Trucks routes
+  app.get("/api/trucks", async (req, res) => {
+    try {
+      const trucks = await storage.getAllTrucks();
+      res.json(trucks);
+    } catch (error) {
+      console.error("Error fetching trucks:", error);
+      res.status(500).json({ error: "Failed to fetch trucks" });
+    }
+  });
+
+  app.get("/api/trucks/available", async (req, res) => {
+    try {
+      const trucks = await storage.getAvailableTrucks();
+      res.json(trucks);
+    } catch (error) {
+      console.error("Error fetching available trucks:", error);
+      res.status(500).json({ error: "Failed to fetch available trucks" });
+    }
+  });
+
+  app.post("/api/trucks", async (req, res) => {
+    try {
+      const truck = await storage.createTruck(req.body);
+      res.json(truck);
+    } catch (error) {
+      console.error("Error creating truck:", error);
+      res.status(500).json({ error: "Failed to create truck" });
+    }
+  });
+
+  app.put("/api/trucks/:id/availability", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isAvailable } = req.body;
+      const truck = await storage.updateTruckAvailability(parseInt(id), isAvailable);
+      if (!truck) {
+        return res.status(404).json({ error: "Truck not found" });
+      }
+      res.json(truck);
+    } catch (error) {
+      console.error("Error updating truck availability:", error);
+      res.status(500).json({ error: "Failed to update truck availability" });
+    }
+  });
+
+  // Assignments routes
+  app.get("/api/assignments", async (req, res) => {
+    try {
+      const assignments = await storage.getAllAssignments();
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      res.status(500).json({ error: "Failed to fetch assignments" });
+    }
+  });
+
+  app.post("/api/assignments", async (req, res) => {
+    try {
+      const assignment = await storage.createAssignment(req.body);
+
+      // Update driver and truck availability
+      if (assignment.driverId) {
+        await storage.updateDriverAvailability(assignment.driverId, false);
+      }
+      if (assignment.truckId) {
+        await storage.updateTruckAvailability(assignment.truckId, false);
+      }
+
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ error: "Failed to create assignment" });
+    }
+  });
+
+  app.get("/api/load-requests/:id/recommendations", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const loadRequest = await storage.getLoadRequest(parseInt(id));
+      if (!loadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      const availableDrivers = await storage.getAvailableDrivers();
+      const availableTrucks = await storage.getAvailableTrucks();
+
+      // Simple recommendation logic
+      const recommendedDriver = availableDrivers.find(driver => 
+        driver.qualification === "CDL Class A" && driver.isAvailable
+      ) || availableDrivers[0];
+
+      const recommendedTruck = availableTrucks.find(truck => 
+        truck.truckType.toLowerCase() === loadRequest.truckType.toLowerCase() && truck.isAvailable
+      ) || availableTrucks[0];
+
+      res.json({
+        recommendedDriver,
+        recommendedTruck,
+        availableDrivers,
+        availableTrucks
+      });
+    } catch (error) {
+      console.error("Error getting recommendations:", error);
+      res.status(500).json({ error: "Failed to get recommendations" });
+    }
+  });
+
   // Get dashboard metrics
-  app.get("/api/metrics", async (req: express.Request, res: express.Response) => {
+  app.get("/api/metrics", async (req, res) => {
     try {
       const loadRequests = await storage.getAllLoadRequests();
       const callLogs = await storage.getAllCallLogs();
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const todaysCalls = callLogs.filter(call => 
         call.createdAt && new Date(call.createdAt) >= today
       ).length;
-      
+
       const todaysLoads = loadRequests.filter(load => 
         load.createdAt && new Date(load.createdAt) >= today
       ).length;
-      
+
       const pendingApproval = loadRequests.filter(load => load.status === "pending").length;
-      
+
       const approvedLoads = loadRequests.filter(load => load.status === "approved");
       const totalRevenue = approvedLoads.length * 2500; // Mock revenue calculation
 

@@ -1,8 +1,13 @@
 import { useState } from "react";
-import StatusOverview from "@/components/status-overview";
-import LoadDashboard from "@/components/load-dashboard-new";
-import NotificationPanel from "@/components/notification-panel";
-import AIProcessing from "@/components/ai-processing";
+import { LoadDashboard } from "@/components/load-dashboard";
+import { LoadDashboardWithAssignments } from "@/components/load-dashboard-with-assignments";
+import { FleetManagement } from "@/components/fleet-management";
+import { StatusOverview } from "@/components/status-overview";
+import { AIProcessing } from "@/components/ai-processing";
+import { CallSimulator } from "@/components/call-simulator";
+import { TwilioSetup } from "@/components/twilio-setup";
+import { NotificationPanel } from "@/components/notification-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Truck, Settings } from "lucide-react";
 
 export default function Dashboard() {
@@ -44,7 +49,40 @@ export default function Dashboard() {
 
         {/* Load Dashboard - positioned right after status tiles */}
         <div className="mt-8">
+          <Tabs defaultValue="loads" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="loads">Load Requests</TabsTrigger>
+          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          <TabsTrigger value="fleet">Fleet</TabsTrigger>
+          <TabsTrigger value="ai">AI Processing</TabsTrigger>
+          <TabsTrigger value="setup">Setup</TabsTrigger>
+          <TabsTrigger value="simulator">Simulator</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="loads">
           <LoadDashboard />
+        </TabsContent>
+
+        <TabsContent value="assignments">
+          <LoadDashboardWithAssignments />
+        </TabsContent>
+
+        <TabsContent value="fleet">
+          <FleetManagement />
+        </TabsContent>
+
+        <TabsContent value="ai">
+          <AIProcessing />
+        </TabsContent>
+
+        <TabsContent value="setup">
+          <TwilioSetup />
+        </TabsContent>
+
+        <TabsContent value="simulator">
+          <CallSimulator />
+        </TabsContent>
+      </Tabs>
         </div>
 
         {/* AI Processing and Notification Panel - side by side layout */}
@@ -53,7 +91,7 @@ export default function Dashboard() {
           <div className="lg:col-span-1">
             <AIProcessing />
           </div>
-          
+
           {/* Notifications - on the right side */}
           <div className="lg:col-span-1">
             <NotificationPanel />
