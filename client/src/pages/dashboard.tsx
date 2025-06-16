@@ -5,7 +5,7 @@ import { FleetManagement } from "@/components/fleet-management";
 import StatusOverview from "@/components/status-overview";
 import AIProcessing from "@/components/ai-processing";
 import CallSimulator from "@/components/call-simulator";
-import { TwilioSetup } from "@/components/twilio-setup";
+import TwilioSetup from "@/components/twilio-setup";
 import NotificationPanel from "@/components/notification-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Truck, Settings } from "lucide-react";
