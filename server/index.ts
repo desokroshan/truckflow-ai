@@ -50,10 +50,11 @@ console.log('Email client initialized');
 
 // Initialize email monitoring
 try {
-  const { initializeEmailMonitoring } = require('./email');
-  initializeEmailMonitoring();
+  import('./email').then(email => {
+    email.initializeEmailMonitoring();
+  });
 } catch (error) {
-  console.log('Email monitoring disabled - dependencies not available');
+  console.log('Email monitoring disabled - dependencies not available', error);
 }
 
 const app = express();

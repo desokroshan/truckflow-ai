@@ -146,13 +146,22 @@ export async function sendOwnerSMS(
 export async function processIncomingEmail(emailContent: string, fromAddress: string): Promise<void> {
   try {
     console.log(`Processing incoming email from ${fromAddress}`);
-    
+    console.log(`Email content: ${emailContent}`);
     // Parse email content
     const parsed = await simpleParser(emailContent);
-    const emailText = parsed.text || parsed.html?.replace(/<[^>]*>/g, '') || '';
+    console.log(`Parsed email content (text):`, parsed.text);
+    console.log(`Parsed email content (html):`, parsed.html);
+    
+    const emailText =
+      typeof parsed.text === 'string' ? parsed.text :
+      typeof parsed.html === 'string' ? parsed.html.replace(/<[^>]*>/g, '') :
+      emailContent?.toString() || '';
+    
+    console.log(`Final email text for processing: ${emailText}`);
     
     // Use AI to extract load information from email
     const extractedData = await extractLoadInfo(emailText);
+    console.log(`Extracted load information: ${extractedData}`);
     
     // Generate load ID
     const loadId = `EML-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
@@ -214,9 +223,11 @@ let imapClient: Imap;
 
 export function initializeEmailMonitoring() {
   const emailProvider = process.env.EMAIL_PROVIDER || "gmail";
+  console.log(`Using ${emailProvider} for email monitoring`);
   
   let imapConfig;
   if (emailProvider === "outlook") {
+    console.log('Using Outlook for email monitoring');
     imapConfig = {
       user: process.env.OUTLOOK_EMAIL || process.env.EMAIL_USER,
       password: process.env.OUTLOOK_PASSWORD || process.env.EMAIL_PASS,
@@ -227,6 +238,7 @@ export function initializeEmailMonitoring() {
     };
   } else {
     // Gmail configuration
+    console.log('Using Gmail for email monitoring');
     imapConfig = {
       user: process.env.GMAIL_EMAIL || process.env.EMAIL_USER,
       password: process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS,
@@ -236,6 +248,7 @@ export function initializeEmailMonitoring() {
       tlsOptions: { rejectUnauthorized: false }
     };
   }
+  console.log('IMAP configuration:', imapConfig);
 
   if (!imapConfig.user || !imapConfig.password) {
     console.log('Email monitoring disabled - credentials not configured');
@@ -261,7 +274,7 @@ export function initializeEmailMonitoring() {
       });
     });
   });
-
+  console.log('Email monitoring connected');
   imapClient.once('error', (err: Error) => {
     console.error('IMAP connection error:', err);
   });
