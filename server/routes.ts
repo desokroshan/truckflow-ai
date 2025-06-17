@@ -616,6 +616,28 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Test email ingestion endpoint
+  app.post("/api/test-email-ingestion", async (req, res) => {
+    try {
+      const { emailContent, fromAddress } = req.body;
+
+      if (!emailContent || !fromAddress) {
+        return res.status(400).json({ error: "emailContent and fromAddress are required" });
+      }
+
+      // Process the email content
+      await processIncomingEmail(emailContent, fromAddress);
+
+      res.json({ 
+        success: true, 
+        message: "Email processed successfully and load request created" 
+      });
+    } catch (error) {
+      console.error("Error testing email ingestion:", error);
+      res.status(500).json({ error: "Failed to process email: " + (error as Error).message });
+    }
+  });
+
   // Get dashboard metrics
   app.get("/api/metrics", async (req, res) => {
     try {
