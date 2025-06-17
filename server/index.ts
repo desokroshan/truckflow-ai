@@ -46,6 +46,15 @@ if (sheetId && clientEmail && privateKey) {
 }
 
 const emailClient = initializeEmailClient();
+console.log('Email client initialized');
+
+// Initialize email monitoring
+try {
+  const { initializeEmailMonitoring } = require('./email');
+  initializeEmailMonitoring();
+} catch (error) {
+  console.log('Email monitoring disabled - dependencies not available');
+}
 
 const app = express();
 app.use(express.json());

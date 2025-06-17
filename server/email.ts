@@ -1,18 +1,41 @@
+
 import nodemailer from "nodemailer";
+import { simpleParser } from "mailparser";
+import { extractLoadInfo, generateLoadSummary } from "./openai";
+import { storage } from "./storage";
 
 let transporter: nodemailer.Transporter;
 
 export function initializeEmailClient() {
   if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || process.env.EMAIL_USER || "default_user",
-        pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || "default_pass",
-      },
-    });
+    // Support both Gmail and Outlook
+    const emailProvider = process.env.EMAIL_PROVIDER || "gmail";
+    
+    let smtpConfig;
+    if (emailProvider === "outlook") {
+      smtpConfig = {
+        host: "smtp-mail.outlook.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.OUTLOOK_EMAIL || process.env.EMAIL_USER,
+          pass: process.env.OUTLOOK_PASSWORD || process.env.EMAIL_PASS,
+        },
+      };
+    } else {
+      // Gmail configuration
+      smtpConfig = {
+        host: "smtp.gmail.com", 
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.GMAIL_EMAIL || process.env.EMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS,
+        },
+      };
+    }
+
+    transporter = nodemailer.createTransporter(smtpConfig);
   }
   return transporter;
 }
@@ -93,7 +116,7 @@ export async function sendOwnerNotification(
     `;
 
     const mailOptions = {
-      from: process.env.SMTP_USER || "noreply@truckflowai.com",
+      from: process.env.EMAIL_USER || "noreply@truckflowai.com",
       to: ownerEmail,
       subject: `🚛 New Load Request - ${loadData.loadId}`,
       html: emailHtml,
@@ -117,4 +140,186 @@ export async function sendOwnerSMS(
   // For now, we'll just log the SMS that would be sent
   console.log(`SMS would be sent to ${phoneNumber}:`);
   console.log(`🚛 TruckFlow AI: New load request ${loadId} from ${customerName}. Route: ${route}. Check email for details.`);
+}
+
+// Email monitoring functionality
+export async function processIncomingEmail(emailContent: string, fromAddress: string): Promise<void> {
+  try {
+    console.log(`Processing incoming email from ${fromAddress}`);
+    
+    // Parse email content
+    const parsed = await simpleParser(emailContent);
+    const emailText = parsed.text || parsed.html?.replace(/<[^>]*>/g, '') || '';
+    
+    // Use AI to extract load information from email
+    const extractedData = await extractLoadInfo(emailText);
+    
+    // Generate load ID
+    const loadId = `EML-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+    
+    // Create load request from email
+    const loadRequest = await storage.createLoadRequest({
+      loadId,
+      customerName: extractedData.customerName || "Email Customer",
+      customerPhone: extractedData.customerPhone || fromAddress,
+      pickupLocation: extractedData.pickupLocation,
+      pickupAddress: extractedData.pickupAddress,
+      deliveryLocation: extractedData.deliveryLocation,
+      deliveryAddress: extractedData.deliveryAddress,
+      cargoType: extractedData.cargoType,
+      weight: extractedData.weight,
+      truckType: extractedData.truckType,
+      pickupTime: extractedData.pickupTime,
+      deliveryTime: extractedData.deliveryTime,
+      deadline: extractedData.deadline,
+      status: "pending",
+      transcription: `Email from: ${fromAddress}\n\n${emailText}`,
+      extractedData: JSON.stringify(extractedData),
+      notificationSent: false,
+    });
+
+    // Generate summary and send notification
+    const summary = await generateLoadSummary(extractedData);
+    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+    const approveUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/approve`;
+    const rejectUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/reject`;
+
+    await sendOwnerNotification(
+      process.env.OWNER_EMAIL || "owner@trucking.com",
+      {
+        loadId: loadRequest.loadId,
+        customerName: extractedData.customerName || "Email Customer",
+        customerPhone: extractedData.customerPhone || fromAddress,
+        route: `${extractedData.pickupLocation} → ${extractedData.deliveryLocation}`,
+        cargoType: extractedData.cargoType,
+        weight: extractedData.weight,
+        truckType: extractedData.truckType,
+        deadline: extractedData.deadline,
+        summary,
+      },
+      approveUrl,
+      rejectUrl
+    );
+
+    console.log(`Email processed successfully: Load ${loadId} created`);
+  } catch (error) {
+    console.error("Error processing incoming email:", error);
+  }
+}
+
+// IMAP connection for monitoring emails
+import Imap from 'imap';
+
+let imapClient: Imap;
+
+export function initializeEmailMonitoring() {
+  const emailProvider = process.env.EMAIL_PROVIDER || "gmail";
+  
+  let imapConfig;
+  if (emailProvider === "outlook") {
+    imapConfig = {
+      user: process.env.OUTLOOK_EMAIL || process.env.EMAIL_USER,
+      password: process.env.OUTLOOK_PASSWORD || process.env.EMAIL_PASS,
+      host: 'outlook.office365.com',
+      port: 993,
+      tls: true,
+      tlsOptions: { rejectUnauthorized: false }
+    };
+  } else {
+    // Gmail configuration
+    imapConfig = {
+      user: process.env.GMAIL_EMAIL || process.env.EMAIL_USER,
+      password: process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS,
+      host: 'imap.gmail.com',
+      port: 993,
+      tls: true,
+      tlsOptions: { rejectUnauthorized: false }
+    };
+  }
+
+  if (!imapConfig.user || !imapConfig.password) {
+    console.log('Email monitoring disabled - credentials not configured');
+    return;
+  }
+
+  imapClient = new Imap(imapConfig);
+
+  imapClient.once('ready', () => {
+    console.log('Email monitoring connected');
+    
+    // Monitor inbox for new emails
+    imapClient.openBox('INBOX', false, (err) => {
+      if (err) {
+        console.error('Error opening inbox:', err);
+        return;
+      }
+      
+      // Listen for new emails
+      imapClient.on('mail', (numNewMsgs) => {
+        console.log(`${numNewMsgs} new email(s) received`);
+        fetchNewEmails();
+      });
+    });
+  });
+
+  imapClient.once('error', (err: Error) => {
+    console.error('IMAP connection error:', err);
+  });
+
+  imapClient.once('end', () => {
+    console.log('Email monitoring connection ended');
+  });
+
+  imapClient.connect();
+}
+
+function fetchNewEmails() {
+  // Search for unread emails
+  imapClient.search(['UNSEEN'], (err, results) => {
+    if (err) {
+      console.error('Error searching emails:', err);
+      return;
+    }
+
+    if (results.length === 0) {
+      return;
+    }
+
+    const fetch = imapClient.fetch(results, { 
+      bodies: '',
+      markSeen: true
+    });
+
+    fetch.on('message', (msg) => {
+      let emailContent = '';
+      let fromAddress = '';
+
+      msg.on('body', (stream) => {
+        stream.on('data', (chunk) => {
+          emailContent += chunk.toString('utf8');
+        });
+      });
+
+      msg.once('attributes', (attrs) => {
+        fromAddress = attrs.envelope?.from?.[0]?.address || 'unknown';
+      });
+
+      msg.once('end', () => {
+        // Process the email for load requests
+        processIncomingEmail(emailContent, fromAddress).catch(error => {
+          console.error('Error processing email:', error);
+        });
+      });
+    });
+
+    fetch.once('error', (err) => {
+      console.error('Fetch error:', err);
+    });
+  });
+}
+
+export function stopEmailMonitoring() {
+  if (imapClient) {
+    imapClient.end();
+  }
 }
