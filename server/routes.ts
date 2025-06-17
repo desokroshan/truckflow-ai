@@ -5,7 +5,8 @@ import { transcribeAudio, extractLoadInfo, generateLoadSummary } from "./openai"
 import { sendOwnerNotification, sendOwnerSMS } from "./email";
 import express from "express";
 import { Express } from "express";
-import { saveLoadToGoogleSheets, updateLoadStatusInGoogleSheets, initializeGoogleSheet } from "./googleSheets";
+import { saveLoadToGoogleSheets, initializeGoogleSheet, updateLoadStatusInGoogleSheets } from "./googleSheets";
+import { processIncomingEmail } from "./email";
 import { createTwiMLResponse, createSMSTwiMLResponse, handleIncomingCall, processRecordingWebhook, processSMSWebhook } from "./twilio";
 import { assignmentEngine } from "./assignment";
 import multer from "multer";
@@ -576,9 +577,9 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     try {
       const { id } = req.params;
       const loadRequestId = parseInt(id);
-      
+
       const assignment = await assignmentEngine.autoAssign(loadRequestId);
-      
+
       if (!assignment) {
         return res.status(400).json({ error: "Unable to auto-assign: no available drivers or trucks" });
       }
@@ -598,9 +599,9 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     try {
       const { id } = req.params;
       const assignmentId = parseInt(id);
-      
+
       const assignment = await assignmentEngine.completeAssignment(assignmentId);
-      
+
       if (!assignment) {
         return res.status(404).json({ error: "Assignment not found" });
       }
