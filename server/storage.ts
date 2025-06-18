@@ -334,11 +334,14 @@ export class MemStorage implements IStorage {
   }
 
   private async initializeSampleData() {
+    const bcrypt = await import('bcrypt');
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
     // Sample users
     this.createUser({
       username: "dispatcher",
       email: "dispatcher@expeditetransport.com",
-      password: "password123", // In production, hash this
+      password: hashedPassword,
       role: "dispatcher",
       companyName: "Expedite Transport",
       phoneNumber: "+1-555-999-8888",
@@ -348,7 +351,7 @@ export class MemStorage implements IStorage {
     this.createUser({
       username: "shipper1",
       email: "john@techcorp.com",
-      password: "password123", // In production, hash this
+      password: hashedPassword,
       role: "shipper",
       companyName: "TechCorp Industries",
       phoneNumber: "+1-555-123-4567",
@@ -358,7 +361,7 @@ export class MemStorage implements IStorage {
     this.createUser({
       username: "shipper2",
       email: "sarah@globalmanufacturing.com",
-      password: "password123", // In production, hash this
+      password: hashedPassword,
       role: "shipper",
       companyName: "Global Manufacturing",
       phoneNumber: "+1-555-987-6543",
