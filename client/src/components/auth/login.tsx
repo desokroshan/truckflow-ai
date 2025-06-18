@@ -9,9 +9,10 @@ import { Truck } from "lucide-react";
 
 interface LoginProps {
   onLogin: (token: string, user: any) => void;
+  onSwitchToSignup: () => void;
 }
 
-export function Login({ onLogin }: LoginProps) {
+export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -97,6 +98,19 @@ export function Login({ onLogin }: LoginProps) {
             </Button>
           </form>
           
+          <div className="mt-4 text-center">
+            <p className="text-sm text-slate-600">
+              Don't have an account?{" "}
+              <button
+                type="button"
+                onClick={onSwitchToSignup}
+                className="text-blue-600 hover:underline"
+              >
+                Sign up
+              </button>
+            </p>
+          </div>
+
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-medium text-sm mb-2">Demo Accounts:</h3>
             <div className="text-xs space-y-1">

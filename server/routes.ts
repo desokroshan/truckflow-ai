@@ -14,7 +14,7 @@ import path from "path";
 import fs from "fs";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { loginSchema } from "@shared/schema";
+import { loginSchema, signupSchema, insertUserSchema } from "@shared/schema";
 
 const upload = multer({ 
   dest: 'uploads/',
@@ -115,6 +115,40 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error("Error logging in:", error);
       res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  app.post("/api/auth/signup", async (req: express.Request, res: express.Response) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+
+      // Generate token for immediate login
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      // Remove password from response
+      const { password, ...userResponse } = user;
+      res.json({ token, user: userResponse });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
     }
   });
 

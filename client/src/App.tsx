@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/dashboard";
 import NotFoundPage from "@/pages/not-found";
 import { Login } from "@/components/auth/login";
+import { Signup } from "@/components/auth/signup";
 import { ShipperDashboard } from "@/components/shipper-dashboard";
 
 const queryClient = new QueryClient({
@@ -21,6 +22,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showSignup, setShowSignup] = useState(false);
 
   useEffect(() => {
     // Check for existing authentication
@@ -46,6 +48,11 @@ function App() {
     setIsAuthenticated(true);
   };
 
+  const handleSignup = (token: string, userData: any) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -67,7 +74,17 @@ function App() {
   if (!isAuthenticated) {
     return (
       <QueryClientProvider client={queryClient}>
-        <Login onLogin={handleLogin} />
+        {showSignup ? (
+          <Signup 
+            onSignup={handleSignup} 
+            onSwitchToLogin={() => setShowSignup(false)} 
+          />
+        ) : (
+          <Login 
+            onLogin={handleLogin} 
+            onSwitchToSignup={() => setShowSignup(true)} 
+          />
+        )}
         <Toaster />
       </QueryClientProvider>
     );

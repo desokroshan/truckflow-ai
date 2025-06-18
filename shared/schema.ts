@@ -104,6 +104,15 @@ export const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+export const signupSchema = z.object({
+  username: z.string().min(3),
+  email: z.string().email(),
+  password: z.string().min(6),
+  role: z.enum(["dispatcher", "shipper", "consignee"]).default("shipper"),
+  companyName: z.string().optional(),
+  phoneNumber: z.string().optional(),
+});
+
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   uploadedAt: true,
@@ -138,6 +147,7 @@ export const insertAssignmentSchema = createInsertSchema(assignments).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
+export type SignupData = z.infer<typeof signupSchema>;
 export type LoadRequest = typeof loadRequests.$inferSelect;
 export type InsertLoadRequest = z.infer<typeof insertLoadRequestSchema>;
 export type CallLog = typeof callLogs.$inferSelect;
