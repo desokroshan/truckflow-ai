@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Truck, Settings } from "lucide-react";
 
-export default function Dashboard() {
+export default function Dashboard({ user }: { user?: any }) {
   const [systemStatus] = useState("active");
 
   return (
@@ -27,7 +27,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-slate-900">Expedite Transport</h1>
-                  <p className="text-xs text-slate-500">AI-Powered Load Management</p>
+                  <p className="text-xs text-slate-500">
+                    {user ? `Welcome, ${user.username || user.email}` : 'AI-Powered Load Management'}
+                  </p>
                 </div>
               </div>
             </div>

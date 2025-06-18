@@ -78,7 +78,7 @@ function App() {
       <Switch>
         <Route path="/">
           {user?.role === 'dispatcher' ? (
-            <Dashboard />
+            <Dashboard user={user} />
           ) : user?.role === 'shipper' ? (
             <ShipperDashboard user={user} />
           ) : (
