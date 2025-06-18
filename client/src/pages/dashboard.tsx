@@ -7,7 +7,8 @@ import AIProcessing from "@/components/ai-processing";
 import CallSimulator from "@/components/call-simulator";
 import TwilioSetup from "@/components/twilio-setup";
 import NotificationPanel from "@/components/notification-panel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Truck, Settings } from "lucide-react";
 
 export default function Dashboard() {
@@ -38,6 +39,13 @@ export default function Dashboard() {
               <button className="p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100">
                 <Settings className="w-5 h-5" />
               </button>
+              <Button variant="outline" onClick={() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.reload();
+              }}>
+                Logout
+              </Button>
             </div>
           </div>
         </div>
