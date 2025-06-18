@@ -12,6 +12,9 @@ import { assignmentEngine } from "./assignment";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import { loginSchema } from "@shared/schema";
 
 const upload = multer({ 
   dest: 'uploads/',
@@ -28,7 +31,107 @@ const upload = multer({
   }
 });
 
+// JWT secret - in production, use environment variable
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
+// Authentication middleware
+const authenticateToken = (req: any, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+};
+
+// Role-based authorization middleware
+const authorizeRole = (roles: string[]) => {
+  return (req: any, res: express.Response, next: express.NextFunction) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+};
+
 export async function registerRoutes(app: express.Express): Promise<Server> {
+
+  // Authentication routes
+  app.post("/api/auth/register", async (req: express.Request, res: express.Response) => {
+    try {
+      const userData = req.body;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+
+      // Remove password from response
+      const { password, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req: express.Request, res: express.Response) => {
+    try {
+      const { email, password } = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      const { password: _, ...userResponse } = user;
+      res.json({ token, user: userResponse });
+    } catch (error) {
+      console.error("Error logging in:", error);
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const user = await storage.getUserById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      const { password, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user data" });
+    }
+  });
 
   // Initialize Google Sheets
 
@@ -115,13 +218,81 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     console.error("Failed to initialize Google Sheets:");
   }
 
-  // Get all load requests
-  app.get("/api/load-requests", async (req: express.Request, res: express.Response) => {
+  // Get all load requests (dispatcher only)
+  app.get("/api/load-requests", authenticateToken, authorizeRole(['dispatcher']), async (req: express.Request, res: express.Response) => {
     try {
       const loadRequests = await storage.getAllLoadRequests();
       res.json(loadRequests);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch load requests" });
+    }
+  });
+
+  // Get shipper's load requests
+  app.get("/api/shipper/load-requests", authenticateToken, authorizeRole(['shipper']), async (req: any, res: express.Response) => {
+    try {
+      const loadRequests = await storage.getLoadRequestsByShipper(req.user.id);
+      res.json(loadRequests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch load requests" });
+    }
+  });
+
+  // Upload document (shipper only)
+  app.post("/api/shipper/upload-document", authenticateToken, authorizeRole(['shipper']), upload.single('document'), async (req: any, res: express.Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No document uploaded" });
+      }
+
+      const { loadRequestId, documentType } = req.body;
+
+      if (!loadRequestId || !documentType) {
+        return res.status(400).json({ error: "loadRequestId and documentType are required" });
+      }
+
+      // Verify the load request belongs to the shipper
+      const loadRequest = await storage.getLoadRequest(parseInt(loadRequestId));
+      if (!loadRequest || loadRequest.shipperId !== req.user.id) {
+        return res.status(403).json({ error: "Access denied to this load request" });
+      }
+
+      const document = await storage.createDocument({
+        loadRequestId: parseInt(loadRequestId),
+        uploadedBy: req.user.id,
+        documentType,
+        fileName: req.file.originalname,
+        filePath: req.file.path,
+        fileSize: req.file.size,
+      });
+
+      res.json({ message: "Document uploaded successfully", document });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
+  // Get documents for a load request
+  app.get("/api/load-requests/:id/documents", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const loadRequestId = parseInt(req.params.id);
+      const loadRequest = await storage.getLoadRequest(loadRequestId);
+      
+      if (!loadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      // Check permissions
+      if (req.user.role === 'shipper' && loadRequest.shipperId !== req.user.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const documents = await storage.getDocumentsByLoadRequest(loadRequestId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      res.status(500).json({ error: "Failed to fetch documents" });
     }
   });
 

@@ -54,6 +54,8 @@ export class MemStorage implements IStorage {
   private currentDriverId: number;
   private currentTruckId: number;
   private currentAssignmentId: number;
+  private currentDocumentId = 1;
+  private documents = new Map<number, Document>();
 
   constructor() {
     this.users = new Map();
@@ -68,7 +70,7 @@ export class MemStorage implements IStorage {
     this.currentDriverId = 1;
     this.currentTruckId = 1;
     this.currentAssignmentId = 1;
-    
+
     // Initialize with sample data
     this.initializeSampleData();
   }
@@ -279,19 +281,90 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async updateAssignmentStatus(id: number, status: string): Promise<Assignment | undefined> {
-    const assignment = this.assignments.get(id);
-    if (!assignment) return undefined;
-
-    const updated: Assignment = {
-      ...assignment,
-      status,
+  // User methods
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const user: User = {
+      ...insertUser,
+      id,
+      createdAt: new Date(),
     };
-    this.assignments.set(id, updated);
-    return updated;
+    this.users.set(id, user);
+    return user;
   }
 
-  private initializeSampleData() {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getLoadRequestsByShipper(shipperId: number): Promise<LoadRequest[]> {
+    return Array.from(this.loadRequests.values()).filter(
+      load => load.shipperId === shipperId
+    );
+  }
+
+  // Document methods
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const id = this.currentDocumentId++;
+    const document: Document = {
+      ...insertDocument,
+      id,
+      uploadedAt: new Date(),
+    };
+    this.documents.set(id, document);
+    return document;
+  }
+
+  async getDocumentsByLoadRequest(loadRequestId: number): Promise<Document[]> {
+    return Array.from(this.documents.values()).filter(
+      doc => doc.loadRequestId === loadRequestId
+    );
+  }
+
+  async getAllDocuments(): Promise<Document[]> {
+    return Array.from(this.documents.values());
+  }
+
+  private async initializeSampleData() {
+    // Sample users
+    this.createUser({
+      username: "dispatcher",
+      email: "dispatcher@expeditetransport.com",
+      password: "password123", // In production, hash this
+      role: "dispatcher",
+      companyName: "Expedite Transport",
+      phoneNumber: "+1-555-999-8888",
+      isActive: true,
+    });
+
+    this.createUser({
+      username: "shipper1",
+      email: "john@techcorp.com",
+      password: "password123", // In production, hash this
+      role: "shipper",
+      companyName: "TechCorp Industries",
+      phoneNumber: "+1-555-123-4567",
+      isActive: true,
+    });
+
+    this.createUser({
+      username: "shipper2",
+      email: "sarah@globalmanufacturing.com",
+      password: "password123", // In production, hash this
+      role: "shipper",
+      companyName: "Global Manufacturing",
+      phoneNumber: "+1-555-987-6543",
+      isActive: true,
+    });
+
     // Sample drivers
     this.createDriver({
       name: "John Smith",
@@ -300,17 +373,7 @@ export class MemStorage implements IStorage {
       qualification: "CDL Class A",
       isAvailable: true,
       experience: "5 years",
-      specializations: "Flatbed, Dry Van"
-    });
-
-    this.createDriver({
-      name: "Maria Garcia",
-      phoneNumber: "+1234567891",
-      licenseNumber: "CDL789012",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "8 years", 
-      specializations: "Reefer, Hazmat"
+      specializations: "Dry Van, Flatbed"
     });
 
     this.createDriver({

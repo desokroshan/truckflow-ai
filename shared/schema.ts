@@ -5,12 +5,19 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("shipper"), // dispatcher, shipper, consignee
+  companyName: text("company_name"),
+  phoneNumber: text("phone_number"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const loadRequests = pgTable("load_requests", {
   id: serial("id").primaryKey(),
   loadId: text("load_id").notNull().unique(),
+  shipperId: integer("shipper_id").references(() => users.id),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone").notNull(),
   pickupLocation: text("pickup_location").notNull(),
@@ -76,9 +83,30 @@ export const assignments = pgTable("assignments", {
   status: text("status").notNull().default("assigned"), // assigned, in_transit, completed
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  loadRequestId: integer("load_request_id").references(() => loadRequests.id).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  documentType: text("document_type").notNull(), // BOL, POD, Invoice, etc.
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  uploadedAt: true,
 });
 
 export const insertLoadRequestSchema = createInsertSchema(loadRequests).omit({
@@ -109,6 +137,7 @@ export const insertAssignmentSchema = createInsertSchema(assignments).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type LoginData = z.infer<typeof loginSchema>;
 export type LoadRequest = typeof loadRequests.$inferSelect;
 export type InsertLoadRequest = z.infer<typeof insertLoadRequestSchema>;
 export type CallLog = typeof callLogs.$inferSelect;
@@ -119,3 +148,5 @@ export type Truck = typeof trucks.$inferSelect;
 export type InsertTruck = z.infer<typeof insertTruckSchema>;
 export type Assignment = typeof assignments.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
