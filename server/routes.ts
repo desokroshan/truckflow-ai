@@ -272,6 +272,36 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Create load request (shipper only)
+  app.post("/api/shipper/load-requests", authenticateToken, authorizeRole(['shipper']), async (req: any, res: express.Response) => {
+    try {
+      const loadRequestData = insertLoadRequestSchema.parse(req.body);
+      
+      // Generate unique load ID
+      const loadId = `EXT-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+      
+      const loadRequest = await storage.createLoadRequest({
+        ...loadRequestData,
+        loadId,
+        shipperId: req.user.id, // Associate with the logged-in shipper
+        status: "pending",
+        notificationSent: false,
+      });
+
+      // Save to Google Sheets
+      try {
+        await saveLoadToGoogleSheets(loadRequest);
+      } catch (error) {
+        console.log("Google Sheets not configured, skipping...");
+      }
+
+      res.json(loadRequest);
+    } catch (error) {
+      console.error("Error creating load request:", error);
+      res.status(500).json({ error: "Failed to create load request" });
+    }
+  });
+
   // Upload document (shipper only)
   app.post("/api/shipper/upload-document", authenticateToken, authorizeRole(['shipper']), upload.single('document'), async (req: any, res: express.Response) => {
     try {

@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, Truck, Package, Calendar } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, FileText, Truck, Package, Calendar, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LoadRequest {
@@ -36,6 +37,7 @@ interface Document {
 export function ShipperDashboard({ user }: { user: any }) {
   const [selectedLoadForUpload, setSelectedLoadForUpload] = useState<number | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [createLoadDialogOpen, setCreateLoadDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -91,6 +93,39 @@ export function ShipperDashboard({ user }: { user: any }) {
     },
   });
 
+  // Create load request mutation
+  const createLoadMutation = useMutation({
+    mutationFn: async (loadData: any) => {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/shipper/load-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(loadData),
+      });
+
+      if (!response.ok) throw new Error("Failed to create load request");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Load Request Created",
+        description: "Your load request has been created successfully",
+      });
+      setCreateLoadDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["shipper-loads"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpload = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -111,6 +146,28 @@ export function ShipperDashboard({ user }: { user: any }) {
       documentType,
       file,
     });
+  };
+
+  const handleCreateLoad = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const loadData = {
+      customerName: formData.get("customerName") as string,
+      customerPhone: formData.get("customerPhone") as string,
+      pickupLocation: formData.get("pickupLocation") as string,
+      pickupAddress: formData.get("pickupAddress") as string,
+      deliveryLocation: formData.get("deliveryLocation") as string,
+      deliveryAddress: formData.get("deliveryAddress") as string,
+      cargoType: formData.get("cargoType") as string,
+      weight: formData.get("weight") as string,
+      truckType: formData.get("truckType") as string,
+      pickupTime: formData.get("pickupTime") as string,
+      deliveryTime: formData.get("deliveryTime") as string,
+      deadline: formData.get("deadline") as string,
+    };
+
+    createLoadMutation.mutate(loadData);
   };
 
   const getStatusColor = (status: string) => {
@@ -207,13 +264,99 @@ export function ShipperDashboard({ user }: { user: any }) {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Your Load Requests</CardTitle>
-              <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Document
-                  </Button>
-                </DialogTrigger>
+              <div className="flex space-x-2">
+                <Dialog open={createLoadDialogOpen} onOpenChange={setCreateLoadDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Load Request
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create New Load Request</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateLoad} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="customerName">Customer Name</Label>
+                          <Input id="customerName" name="customerName" required />
+                        </div>
+                        <div>
+                          <Label htmlFor="customerPhone">Customer Phone</Label>
+                          <Input id="customerPhone" name="customerPhone" type="tel" required />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="pickupLocation">Pickup Location</Label>
+                          <Input id="pickupLocation" name="pickupLocation" required />
+                        </div>
+                        <div>
+                          <Label htmlFor="deliveryLocation">Delivery Location</Label>
+                          <Input id="deliveryLocation" name="deliveryLocation" required />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="pickupAddress">Pickup Address</Label>
+                        <Textarea id="pickupAddress" name="pickupAddress" required />
+                      </div>
+                      <div>
+                        <Label htmlFor="deliveryAddress">Delivery Address</Label>
+                        <Textarea id="deliveryAddress" name="deliveryAddress" required />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="cargoType">Cargo Type</Label>
+                          <Input id="cargoType" name="cargoType" required />
+                        </div>
+                        <div>
+                          <Label htmlFor="weight">Weight</Label>
+                          <Input id="weight" name="weight" placeholder="e.g., 45000 lbs" required />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="truckType">Truck Type</Label>
+                        <Select name="truckType" required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select truck type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Dry Van">Dry Van</SelectItem>
+                            <SelectItem value="Flatbed">Flatbed</SelectItem>
+                            <SelectItem value="Reefer">Reefer</SelectItem>
+                            <SelectItem value="Box Truck">Box Truck</SelectItem>
+                            <SelectItem value="Step Deck">Step Deck</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="pickupTime">Pickup Time</Label>
+                          <Input id="pickupTime" name="pickupTime" type="datetime-local" />
+                        </div>
+                        <div>
+                          <Label htmlFor="deliveryTime">Delivery Time</Label>
+                          <Input id="deliveryTime" name="deliveryTime" type="datetime-local" />
+                        </div>
+                        <div>
+                          <Label htmlFor="deadline">Deadline</Label>
+                          <Input id="deadline" name="deadline" type="datetime-local" />
+                        </div>
+                      </div>
+                      <Button type="submit" disabled={createLoadMutation.isPending} className="w-full">
+                        {createLoadMutation.isPending ? "Creating..." : "Create Load Request"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Document
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Upload Document</DialogTitle>
@@ -259,6 +402,7 @@ export function ShipperDashboard({ user }: { user: any }) {
                   </form>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
