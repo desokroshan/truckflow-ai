@@ -340,7 +340,7 @@ export class MemStorage implements IStorage {
     // Sample users
     this.createUser({
       username: "dispatcher",
-      email: "dispatcher@expeditetransport.com",
+      email: "frank@expeditetransport.com",
       password: hashedPassword,
       role: "dispatcher",
       companyName: "Expedite Transport",
@@ -350,10 +350,10 @@ export class MemStorage implements IStorage {
 
     this.createUser({
       username: "shipper1",
-      email: "john@techcorp.com",
+      email: "john@hercrental.com",
       password: hashedPassword,
       role: "shipper",
-      companyName: "TechCorp Industries",
+      companyName: "HercRental",
       phoneNumber: "+1-555-123-4567",
       isActive: true,
     });
