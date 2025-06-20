@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,7 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
       // Store token in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
+
       onLogin(data.token, data.user);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Login failed");
@@ -97,7 +96,7 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-          
+
           <div className="mt-4 text-center">
             <p className="text-sm text-slate-600">
               Don't have an account?{" "}
@@ -114,8 +113,8 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-medium text-sm mb-2">Demo Accounts:</h3>
             <div className="text-xs space-y-1">
-              <div><strong>Dispatcher:</strong> dispatcher@expeditetransport.com</div>
-              <div><strong>Shipper:</strong> john@techcorp.com</div>
+              <div><strong>Dispatcher:</strong> frank@expeditetransport.com</div>
+              <div><strong>Shipper:</strong> john@hercrental.com</div>
               <div><strong>Password:</strong> password123</div>
             </div>
           </div>
