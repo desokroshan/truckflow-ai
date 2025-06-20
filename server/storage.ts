@@ -339,7 +339,7 @@ export class MemStorage implements IStorage {
 
     // Sample users
     this.createUser({
-      username: "dispatcher",
+      username: "frank",
       email: "frank@expeditetransport.com",
       password: hashedPassword,
       role: "dispatcher",
@@ -349,7 +349,7 @@ export class MemStorage implements IStorage {
     });
 
     this.createUser({
-      username: "shipper1",
+      username: "john",
       email: "john@hercrental.com",
       password: hashedPassword,
       role: "shipper",
