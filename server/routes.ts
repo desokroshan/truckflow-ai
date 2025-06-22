@@ -432,6 +432,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         pickupTime: extractedData.pickupTime,
         deliveryTime: extractedData.deliveryTime,
         deadline: extractedData.deadline,
+        additionalNotes: extractedData.additionalNotes,
         status: "pending",
         transcription,
         extractedData: JSON.stringify(extractedData),

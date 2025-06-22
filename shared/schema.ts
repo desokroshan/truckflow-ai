@@ -30,6 +30,7 @@ export const loadRequests = pgTable("load_requests", {
   pickupTime: text("pickup_time"),
   deliveryTime: text("delivery_time"),
   deadline: text("deadline"),
+  additionalNotes: text("additional_notes"),
   status: text("status").notNull().default("pending"),
   transcription: text("transcription"),
   extractedData: text("extracted_data"),

@@ -165,6 +165,7 @@ export function ShipperDashboard({ user }: { user: any }) {
       pickupTime: formData.get("pickupTime") as string,
       deliveryTime: formData.get("deliveryTime") as string,
       deadline: formData.get("deadline") as string,
+      additionalNotes: formData.get("additionalNotes") as string,
     };
 
     createLoadMutation.mutate(loadData);
@@ -343,6 +344,15 @@ export function ShipperDashboard({ user }: { user: any }) {
                           <Label htmlFor="deadline">Deadline</Label>
                           <Input id="deadline" name="deadline" type="datetime-local" />
                         </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="additionalNotes">Additional Notes</Label>
+                        <Textarea 
+                          id="additionalNotes" 
+                          name="additionalNotes" 
+                          placeholder="Any additional information, special requirements, or notes..."
+                          rows={3}
+                        />
                       </div>
                       <Button type="submit" disabled={createLoadMutation.isPending} className="w-full">
                         {createLoadMutation.isPending ? "Creating..." : "Create Load Request"}

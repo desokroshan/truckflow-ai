@@ -48,6 +48,7 @@ interface ExtractedLoadInfo {
   pickupTime?: string;
   deliveryTime?: string;
   deadline?: string;
+  additionalNotes?: string;
 }
 
 export async function extractLoadInfo(transcription: string): Promise<ExtractedLoadInfo> {
@@ -72,9 +73,10 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
             "truckType": "string (type of truck/trailer needed)",
             "pickupTime": "string (optional - pickup time window)",
             "deliveryTime": "string (optional - delivery time window)",
-            "deadline": "string (optional - deadline for delivery)"
+            "deadline": "string (optional - deadline for delivery)",
+            "additionalNotes": "string (Any additional information, special requirements, or other details that don't fit in the standard fields)"
           }
-          
+
           If any information is not clearly stated, make reasonable inferences based on the cargo type and context.
           For truck type, common options are: Box Truck, Dry Van, Flatbed, Reefer, Step Deck, Lowboy.
           Extract phone numbers in format (XXX) XXX-XXXX.
@@ -89,7 +91,7 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
     });
 
     const extractedData = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     // Validate required fields
     // const requiredFields = ['customerName', 'pickupLocation', 'deliveryLocation', 'cargoType', 'weight', 'truckType'];
     // for (const field of requiredFields) {

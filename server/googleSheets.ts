@@ -8,10 +8,10 @@ const SHEET_NAME = "Load_Requests";
 export function initializeGoogleSheetsClient(sheetId: string, client_email: string, private_key: string): void {
   // Initialize Google Sheets client with environment variables
   console.log(`Initializing Google Sheets client with sheet ID: ${sheetId}`);
-  
+
   // Format the private key properly
   const formattedPrivateKey = private_key.replace(/\\n/g, '\n');
-  
+
   // Create JWT client
   const auth = new google.auth.JWT(
     client_email,
@@ -20,11 +20,11 @@ export function initializeGoogleSheetsClient(sheetId: string, client_email: stri
     ['https://www.googleapis.com/auth/spreadsheets'],
     undefined
   );
-  
+
   sheets = google.sheets({ version: "v4", auth });
   SPREADSHEET_ID = sheetId;
   console.log(`Google Sheets client initialized with sheet ID: ${SPREADSHEET_ID}`);
-  
+
   if (!SPREADSHEET_ID) {
     throw new Error('GOOGLE_SHEETS_ID environment variable is required');
   }
@@ -38,7 +38,7 @@ export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise
     console.log('Attempting to save to Google Sheets');
     console.log('Spreadsheet ID:', SPREADSHEET_ID);
     console.log('Sheet Name:', SHEET_NAME);
-    
+
     // First check if we can access the spreadsheet
     const spreadsheet = await sheets.spreadsheets.get({
       spreadsheetId: SPREADSHEET_ID
@@ -72,6 +72,7 @@ export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise
       loadRequest.pickupTime || "",
       loadRequest.deliveryTime || "",
       loadRequest.deadline || "",
+      loadRequest.additionalNotes || "",
       loadRequest.status,
       loadRequest.createdAt?.toISOString() || new Date().toISOString(),
       loadRequest.approvedAt?.toISOString() || "",
@@ -120,20 +121,9 @@ export async function initializeGoogleSheet(): Promise<void> {
 
     // Check if the sheet exists and create headers if needed
     const headers = [
-      "Load ID",
-      "Customer Name", 
-      "Customer Phone",
-      "Pickup Location",
-      "Delivery Location",
-      "Cargo Type",
-      "Weight",
-      "Truck Type",
-      "Pickup Time",
-      "Delivery Time",
-      "Deadline",
-      "Status",
-      "Created At",
-      "Approved At"
+      "Load ID", "Customer Name", "Customer Phone", "Pickup Location", "Delivery Location",
+      "Cargo Type", "Weight", "Truck Type", "Pickup Time", "Delivery Time", "Deadline",
+      "Additional Notes", "Status", "Created At", "Approved At"
     ];
 
     await sheets.spreadsheets.values.update({
