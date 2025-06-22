@@ -39,12 +39,19 @@ const authenticateToken = (req: any, res: express.Response, next: express.NextFu
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
+  console.log(`Auth attempt for ${req.path}: token present=${!!token}`);
+
   if (!token) {
+    console.log('No token provided');
     return res.status(401).json({ error: 'Access token required' });
   }
 
   jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
+    if (err) {
+      console.log('Token verification failed:', err.message);
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    console.log('Token verified for user:', user.email, user.role);
     req.user = user;
     next();
   });
@@ -265,7 +272,9 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Get shipper's load requests
   app.get("/api/shipper/load-requests", authenticateToken, authorizeRole(['shipper']), async (req: any, res: express.Response) => {
     try {
-      const loadRequests = await storage.getLoadRequestsByShipper(req.user.id);
+      // For now, show all load requests to debug the phone call issue
+      // In production, you'd want to filter by shipper or assign calls to shippers
+      const loadRequests = await storage.getAllLoadRequests();
       res.json(loadRequests);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch load requests" });
