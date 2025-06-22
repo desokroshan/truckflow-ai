@@ -281,6 +281,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Get all load requests for dispatcher (includes shipper requests)
+  app.get("/api/dispatcher/all-loads", authenticateToken, authorizeRole(['dispatcher']), async (req: any, res: express.Response) => {
+    try {
+      const loadRequests = await storage.getAllLoadRequests();
+      res.json(loadRequests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch load requests" });
+    }
+  });
+
   // Create load request (shipper only)
   app.post("/api/shipper/load-requests", authenticateToken, authorizeRole(['shipper']), async (req: any, res: express.Response) => {
     try {
