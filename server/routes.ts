@@ -262,9 +262,11 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Get all load requests (dispatcher only)
   app.get("/api/load-requests", authenticateToken, authorizeRole(['dispatcher']), async (req: express.Request, res: express.Response) => {
     try {
+      console.log("Fetching load requests for dispatcher1");
       const loadRequests = await storage.getAllLoadRequests();
       res.json(loadRequests);
     } catch (error) {
+      console.error("Error fetching load requests for dispatcher:", error);
       res.status(500).json({ error: "Failed to fetch load requests" });
     }
   });
@@ -274,9 +276,11 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     try {
       // For now, show all load requests to debug the phone call issue
       // In production, you'd want to filter by shipper or assign calls to shippers
+      console.log("Fetching load requests for shipper");
       const loadRequests = await storage.getAllLoadRequests();
       res.json(loadRequests);
     } catch (error) {
+      console.error("Error fetching load requests for shipper:", error);
       res.status(500).json({ error: "Failed to fetch load requests" });
     }
   });
@@ -284,9 +288,11 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Get all load requests for dispatcher (includes shipper requests)
   app.get("/api/dispatcher/all-loads", authenticateToken, authorizeRole(['dispatcher']), async (req: any, res: express.Response) => {
     try {
+      console.log("Fetching all load requests for dispatcher2");
       const loadRequests = await storage.getAllLoadRequests();
       res.json(loadRequests);
     } catch (error) {
+      console.error("Error fetching all load requests for dispatcher:", error);
       res.status(500).json({ error: "Failed to fetch load requests" });
     }
   });
@@ -294,6 +300,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Create load request (shipper only)
   app.post("/api/shipper/load-requests", authenticateToken, authorizeRole(['shipper']), async (req: any, res: express.Response) => {
     try {
+      console.log("Creating load request for shipper2");
       const loadRequestData = insertLoadRequestSchema.parse(req.body);
       
       // Generate unique load ID
