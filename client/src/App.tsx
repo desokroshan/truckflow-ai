@@ -32,9 +32,23 @@ function App() {
     if (token && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
+        
+        // Validate token hasn't expired
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        
+        if (tokenPayload.exp < currentTime) {
+          console.log('Token expired, clearing auth data');
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setLoading(false);
+          return;
+        }
+        
         setUser(userData);
         setIsAuthenticated(true);
       } catch (error) {
+        console.log('Error parsing stored auth data:', error);
         // Clear invalid data
         localStorage.removeItem("token");
         localStorage.removeItem("user");

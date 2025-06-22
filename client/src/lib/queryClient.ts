@@ -44,14 +44,29 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
+      queryFn: async ({ queryKey }) => {
+        const token = localStorage.getItem("token");
+        const response = await fetch(queryKey[0] as string, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          // Token expired or invalid, clear auth data and reload page
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.reload();
+          throw new Error("Authentication expired");
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        return response.json();
+      },
     },
   },
 });
