@@ -240,8 +240,8 @@ export function initializeEmailMonitoring() {
     // Gmail configuration
     console.log('Using Gmail for email monitoring');
     imapConfig = {
-      user: process.env.GMAIL_EMAIL || process.env.EMAIL_USER,
-      password: process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS,
+      user: process.env.EMAIL_USER,
+      password: process.env.EMAIL_PASS,
       host: 'imap.gmail.com',
       port: 993,
       tls: true,
