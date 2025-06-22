@@ -893,6 +893,20 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check load requests without authentication
+  app.get("/api/debug/load-requests", async (req, res) => {
+    try {
+      const loadRequests = await storage.getAllLoadRequests();
+      res.json({
+        total: loadRequests.length,
+        recent: loadRequests.slice(-5), // Last 5 requests
+        phoneCallLoads: loadRequests.filter(load => !load.shipperId) // Loads from phone calls
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch load requests" });
+    }
+  });
+
   // Get dashboard metrics
   app.get("/api/metrics", async (req, res) => {
     try {
