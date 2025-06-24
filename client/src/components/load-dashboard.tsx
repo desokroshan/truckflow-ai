@@ -22,6 +22,21 @@ export default function LoadDashboard() {
   
   const { data: loadRequests = [], isLoading } = useQuery<LoadRequest[]>({
     queryKey: ["/api/load-requests"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/load-requests", {
+        headers: {
+          "Authorization": token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    },
   });
 
   // Filter load requests by status
