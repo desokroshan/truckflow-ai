@@ -389,38 +389,93 @@ export class MemStorage implements IStorage {
       specializations: "Box Truck"
     });
 
-    // Sample trucks
+    // Actual fleet inventory - only trucks from the specified list
     this.createTruck({
-      truckNumber: "TRK001",
+      truckNumber: "LB001",
+      make: "Caterpillar",
+      model: "CT660",
+      year: 2020,
+      truckType: "Lowboy",
+      weightCapacity: "150,000 lbs",
+      isAvailable: true,
+      currentLocation: "Yard"
+    });
+
+    this.createTruck({
+      truckNumber: "SET001",
+      make: "Landoll",
+      model: "855",
+      year: 2019,
+      truckType: "Step Deck",
+      weightCapacity: "48,000 lbs",
+      isAvailable: true,
+      currentLocation: "Yard"
+    });
+
+    this.createTruck({
+      truckNumber: "SET002",
+      make: "Trail King",
+      model: "TK110",
+      year: 2018,
+      truckType: "Step Deck",
+      weightCapacity: "48,000 lbs",
+      isAvailable: true,
+      currentLocation: "Yard"
+    });
+
+    this.createTruck({
+      truckNumber: "DD001",
+      make: "Fontaine",
+      model: "Magnitude",
+      year: 2020,
+      truckType: "Double Drop",
+      weightCapacity: "80,000 lbs",
+      isAvailable: true,
+      currentLocation: "Yard"
+    });
+
+    this.createTruck({
+      truckNumber: "RB001",
+      make: "Freightliner",
+      model: "M2 106",
+      year: 2019,
+      truckType: "Rollback",
+      weightCapacity: "26,000 lbs",
+      isAvailable: true,
+      currentLocation: "Yard"
+    });
+
+    this.createTruck({
+      truckNumber: "HS001",
+      make: "Ford",
+      model: "F-450",
+      year: 2021,
+      truckType: "Hot Shot",
+      weightCapacity: "15,000 lbs",
+      isAvailable: true,
+      currentLocation: "Yard"
+    });
+
+    this.createTruck({
+      truckNumber: "PO001",
       make: "Freightliner",
       model: "Cascadia",
       year: 2020,
       truckType: "Dry Van",
       weightCapacity: "80,000 lbs",
       isAvailable: true,
-      currentLocation: "New York, NY"
+      currentLocation: "Yard"
     });
 
     this.createTruck({
-      truckNumber: "TRK002", 
-      make: "Peterbilt",
-      model: "579",
-      year: 2019,
+      truckNumber: "PU001",
+      make: "Chevrolet",
+      model: "Silverado 3500HD",
+      year: 2022,
       truckType: "Flatbed",
-      weightCapacity: "80,000 lbs",
+      weightCapacity: "14,000 lbs",
       isAvailable: true,
-      currentLocation: "Chicago, IL"
-    });
-
-    this.createTruck({
-      truckNumber: "TRK003",
-      make: "Volvo",
-      model: "VNL860",
-      year: 2021,
-      truckType: "Reefer",
-      weightCapacity: "80,000 lbs",
-      isAvailable: false,
-      currentLocation: "Los Angeles, CA"
+      currentLocation: "Yard"
     });
   }
 }
