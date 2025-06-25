@@ -39,8 +39,6 @@ const authenticateToken = (req: any, res: express.Response, next: express.NextFu
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  console.log(`Auth attempt for ${req.path}: token present=${!!token}`);
-
   if (!token) {
     console.log('No token provided');
     return res.status(401).json({ error: 'Access token required' });
@@ -644,7 +642,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Twilio webhook for recording completion
   app.post("/api/twilio/recording", async (req: express.Request, res: express.Response) => {
     try {
-      console.log("Incoming twilio recording received", req.body);
+      //console.log("Incoming twilio recording received", req.body);
       const { 
         RecordingUrl: recordingUrl,
         RecordingSid: recordingSid, 
@@ -652,10 +650,10 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         RecordingDuration: duration 
       } = req.body;
 
-      console.log("Recording SID:", recordingSid);
-      console.log("Recording URL:", recordingUrl);
-      console.log("Call SID:", callSid);
-      console.log("Recording duration:", duration); 
+      // console.log("Recording SID:", recordingSid);
+      // console.log("Recording URL:", recordingUrl);
+      // console.log("Call SID:", callSid);
+      // console.log("Recording duration:", duration); 
 
       // Process the recording asynchronously
       processRecordingWebhook(
@@ -897,20 +895,6 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error("Error testing email ingestion:", error);
       res.status(500).json({ error: "Failed to process email: " + (error as Error).message });
-    }
-  });
-
-  // Debug endpoint to check load requests without authentication
-  app.get("/api/debug/load-requests", async (req, res) => {
-    try {
-      const loadRequests = await storage.getAllLoadRequests();
-      res.json({
-        total: loadRequests.length,
-        recent: loadRequests.slice(-5), // Last 5 requests
-        phoneCallLoads: loadRequests.filter(load => !load.shipperId) // Loads from phone calls
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch load requests" });
     }
   });
 

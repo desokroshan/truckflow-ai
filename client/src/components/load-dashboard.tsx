@@ -26,8 +26,7 @@ export default function LoadDashboard() {
       const token = localStorage.getItem("token");
       const response = await fetch("/api/load-requests", {
         headers: {
-          "Authorization": token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       });
 

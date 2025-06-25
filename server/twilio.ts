@@ -186,14 +186,14 @@ export async function processRecordingWebhook(
     
     // Download the recording
     const recordingData = await getTwilioClient().recordings(recordingSid).fetch();
-    console.log(`Recording data is: ${JSON.stringify(recordingData, null, 2)}`);
+    //console.log(`Recording data is: ${JSON.stringify(recordingData, null, 2)}`);
     const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.wav')}`;
-    console.log(`Recording URL: ${audioUrl}`);
+    //console.log(`Recording URL: ${audioUrl}`);
     
     // Get the phone number from the call
     const callData = await getTwilioClient().calls(callSid).fetch();
     const phoneNumber = callData.from;
-    console.log(`Phone number: ${phoneNumber}`);
+    //console.log(`Phone number: ${phoneNumber}`);
     
     const response = await fetch(audioUrl, {
       method: 'GET',
@@ -210,12 +210,12 @@ export async function processRecordingWebhook(
     
     const audioBuffer = await response.arrayBuffer();
     const audioPath = `uploads/recording_${recordingSid}.mp3`;
-    console.log(`Audio path: ${audioPath}`);
+    //console.log(`Audio path: ${audioPath}`);
     
     // Save audio file temporarily
     const fs = await import('fs/promises');
     await fs.writeFile(audioPath, Buffer.from(audioBuffer));
-    console.log(`Audio file saved to: ${audioPath}`);
+    //console.log(`Audio file saved to: ${audioPath}`);
     
     // Transcribe the actual audio using OpenAI Whisper
     console.log(`Transcribing audio file: ${audioPath}`);
@@ -224,7 +224,7 @@ export async function processRecordingWebhook(
     try {
       const transcriptionResult = await transcribeAudio(audioPath);
       actualTranscription = transcriptionResult.text;
-      console.log(`Transcription successful: ${actualTranscription}`);
+      //console.log(`Transcription successful: ${actualTranscription}`);
     } catch (transcriptionError) {
       console.error(`Transcription failed:`, transcriptionError);
       throw new Error(`Failed to transcribe audio: ${transcriptionError instanceof Error ? transcriptionError.message : 'Unknown error'}`);

@@ -71,8 +71,18 @@ export function LoadDashboardWithAssignments() {
   const { data: loads = [], isLoading: loadsLoading } = useQuery({
     queryKey: ["load-requests"],
     queryFn: async () => {
-      const response = await fetch("/api/load-requests");
-      if (!response.ok) throw new Error("Failed to fetch load requests");
+      const token = localStorage.getItem("token");
+      console.log("Token from here2:", token);
+      const response = await fetch("/api/load-requests", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       return response.json();
     },
   });
