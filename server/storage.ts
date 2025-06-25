@@ -368,25 +368,105 @@ export class MemStorage implements IStorage {
       isActive: true,
     });
 
-    // Sample drivers
+    // Actual driver roster
     this.createDriver({
-      name: "John Smith",
-      phoneNumber: "+1234567890",
-      licenseNumber: "CDL123456",
+      name: "Arturo Magallanes",
+      phoneNumber: "+1-555-0001", // Placeholder - update with actual phone numbers
+      licenseNumber: "CDL-AM001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "5 years",
-      specializations: "Dry Van, Flatbed"
+      experience: "Commercial Driver",
+      specializations: "Heavy Equipment Transport"
     });
 
     this.createDriver({
-      name: "Robert Johnson",
-      phoneNumber: "+1234567892",
-      licenseNumber: "CDL345678",
-      qualification: "CDL Class B",
-      isAvailable: false,
-      experience: "3 years",
-      specializations: "Box Truck"
+      name: "Carlos Soto",
+      phoneNumber: "+1-555-0002",
+      licenseNumber: "CDL-CS001",
+      qualification: "CDL Class A", 
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Specialized Equipment"
+    });
+
+    this.createDriver({
+      name: "Damon Uribes",
+      phoneNumber: "+1-555-0003",
+      licenseNumber: "CDL-DU001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver", 
+      specializations: "Heavy Haul"
+    });
+
+    this.createDriver({
+      name: "Frank Mora",
+      phoneNumber: "+1-555-0004",
+      licenseNumber: "CDL-FM001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Senior Driver",
+      specializations: "Equipment Transport, Dispatch"
+    });
+
+    this.createDriver({
+      name: "Jonathan E McKinsey",
+      phoneNumber: "+1-555-0005",
+      licenseNumber: "CDL-JM001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Long Distance Transport"
+    });
+
+    this.createDriver({
+      name: "Kyle Summerell",
+      phoneNumber: "+1-555-0006",
+      licenseNumber: "CDL-KS001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Heavy Equipment"
+    });
+
+    this.createDriver({
+      name: "Moises R Martinez",
+      phoneNumber: "+1-555-0007",
+      licenseNumber: "CDL-MM001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Specialized Transport"
+    });
+
+    this.createDriver({
+      name: "Noe Manfredy Ayala",
+      phoneNumber: "+1-555-0008",
+      licenseNumber: "CDL-NA001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Heavy Haul Equipment"
+    });
+
+    this.createDriver({
+      name: "Rafael Miranda",
+      phoneNumber: "+1-555-0009",
+      licenseNumber: "CDL-RM001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Equipment Transport"
+    });
+
+    this.createDriver({
+      name: "Ronald Winans",
+      phoneNumber: "+1-555-0010",
+      licenseNumber: "CDL-RW001",
+      qualification: "CDL Class A",
+      isAvailable: true,
+      experience: "Commercial Driver",
+      specializations: "Heavy Equipment Transport"
     });
 
     // Actual fleet inventory - only trucks from the specified list
