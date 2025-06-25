@@ -382,12 +382,13 @@ export function FleetManagement() {
                             <SelectValue placeholder="Select truck type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Dry Van">Dry Van</SelectItem>
-                            <SelectItem value="Flatbed">Flatbed</SelectItem>
-                            <SelectItem value="Reefer">Reefer</SelectItem>
-                            <SelectItem value="Box Truck">Box Truck</SelectItem>
-                            <SelectItem value="Step Deck">Step Deck</SelectItem>
                             <SelectItem value="Lowboy">Lowboy</SelectItem>
+                            <SelectItem value="Step Deck">Step Deck (Straight Equipment Trailer)</SelectItem>
+                            <SelectItem value="Double Drop">Double Drop Equipment Trailer</SelectItem>
+                            <SelectItem value="Rollback">Rollback</SelectItem>
+                            <SelectItem value="Hot Shot">Hot Shot Trailer</SelectItem>
+                            <SelectItem value="Dry Van">3 Axle Tractor (Power Only)</SelectItem>
+                            <SelectItem value="Flatbed">3500 Pickup Truck with 10' Flatbed</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
