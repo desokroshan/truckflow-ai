@@ -187,6 +187,14 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       notificationSent: false,
     });
 
+    // Save to Google Sheets (will log error if not configured)
+    try {
+      const { saveLoadToGoogleSheets } = await import('./googleSheets');
+      await saveLoadToGoogleSheets(loadRequest);
+    } catch (error) {
+      console.log("Google Sheets not configured, skipping...");
+    }
+
     // Generate summary and send notification
     const summary = await generateLoadSummary(extractedData);
     const baseUrl = process.env.BASE_URL || "http://localhost:5000";
