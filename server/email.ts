@@ -202,7 +202,7 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
     const rejectUrl = `${baseUrl}/api/load-requests/${loadRequest.id}/reject`;
 
     await sendOwnerNotification(
-      process.env.OWNER_EMAIL || "owner@trucking.com",
+      process.env.OWNER_EMAIL || "rk3110@nyu.edu",
       {
         loadId: loadRequest.loadId,
         customerName: extractedData.customerName || "Email Customer",
