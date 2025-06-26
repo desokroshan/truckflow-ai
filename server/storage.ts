@@ -368,105 +368,105 @@ export class MemStorage implements IStorage {
       isActive: true,
     });
 
-    // Actual driver roster
+    // Updated driver roster with enhanced information
     this.createDriver({
       name: "Arturo Magallanes",
-      phoneNumber: "+1-555-0001", // Placeholder - update with actual phone numbers
+      phoneNumber: "(562) 376-7898",
       licenseNumber: "CDL-AM001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Heavy Equipment Transport"
+      experience: "Oversized Load Specialist (Partial)",
+      specializations: "Heavy Equipment Transport, Standard Billing: $37/Hr & $40/Hr oversized & weekends"
     });
 
     this.createDriver({
       name: "Carlos Soto",
-      phoneNumber: "+1-555-0002",
+      phoneNumber: "(562) 381-5457",
       licenseNumber: "CDL-CS001",
-      qualification: "CDL Class A", 
+      qualification: "CDL Class A - Oversized Loads Certified",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Specialized Equipment"
+      experience: "Oversized Load Specialist",
+      specializations: "Specialized Equipment, Billing: $45/Hr Reg. & $55/Hr Oversized"
     });
 
     this.createDriver({
       name: "Damon Uribes",
-      phoneNumber: "+1-555-0003",
+      phoneNumber: "(626) 676-2402",
       licenseNumber: "CDL-DU001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver", 
-      specializations: "Heavy Haul"
+      experience: "Standard Commercial Driver",
+      specializations: "Heavy Haul, Standard Billing: $75/Hr"
     });
 
     this.createDriver({
       name: "Frank Mora",
-      phoneNumber: "+1-555-0004",
+      phoneNumber: "(562) 964-8643",
       licenseNumber: "CDL-FM001",
-      qualification: "CDL Class A",
+      qualification: "CDL Class A - Oversized Loads Certified",
       isAvailable: true,
-      experience: "Senior Driver",
-      specializations: "Equipment Transport, Dispatch"
+      experience: "Senior Driver & Operations",
+      specializations: "Equipment Transport, Dispatch, Billing: $45/Hr"
     });
 
     this.createDriver({
       name: "Jonathan E McKinsey",
-      phoneNumber: "+1-555-0005",
+      phoneNumber: "(323) 243-9607",
       licenseNumber: "CDL-JM001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Long Distance Transport"
+      experience: "Standard Commercial Driver",
+      specializations: "Long Distance Transport, Billing: $85/Hr"
     });
 
     this.createDriver({
       name: "Kyle Summerell",
-      phoneNumber: "+1-555-0006",
+      phoneNumber: "(919) 922-7389",
       licenseNumber: "CDL-KS001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Heavy Equipment"
+      experience: "Standard Commercial Driver",
+      specializations: "Heavy Equipment, Billing: $40/Hr"
     });
 
     this.createDriver({
       name: "Moises R Martinez",
-      phoneNumber: "+1-555-0007",
+      phoneNumber: "(323) 420-9211",
       licenseNumber: "CDL-MM001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Specialized Transport"
+      experience: "Standard Commercial Driver",
+      specializations: "Specialized Transport, Billing: $38/Hr & $40/Hr weekends"
     });
 
     this.createDriver({
       name: "Noe Manfredy Ayala",
-      phoneNumber: "+1-555-0008",
+      phoneNumber: "(323) 422-3505",
       licenseNumber: "CDL-NA001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Heavy Haul Equipment"
+      experience: "Standard Commercial Driver",
+      specializations: "Heavy Haul Equipment, Billing: $45/Hr"
     });
 
     this.createDriver({
       name: "Rafael Miranda",
-      phoneNumber: "+1-555-0009",
+      phoneNumber: "(323) 907-7470",
       licenseNumber: "CDL-RM001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Equipment Transport"
+      experience: "Standard Commercial Driver",
+      specializations: "Equipment Transport, Billing: $70/Hr $80/Hr Afterhours"
     });
 
     this.createDriver({
       name: "Ronald Winans",
-      phoneNumber: "+1-555-0010",
+      phoneNumber: "(562) 332-1326",
       licenseNumber: "CDL-RW001",
       qualification: "CDL Class A",
       isAvailable: true,
-      experience: "Commercial Driver",
-      specializations: "Heavy Equipment Transport"
+      experience: "Standard Commercial Driver",
+      specializations: "Heavy Equipment Transport, Billing: $35/Hr & $40/Hr weekends"
     });
 
     // Actual fleet inventory - only trucks from the specified list
