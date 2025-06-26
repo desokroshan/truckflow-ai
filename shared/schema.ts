@@ -53,12 +53,12 @@ export const callLogs = pgTable("call_logs", {
 export const drivers = pgTable("drivers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  email: text("email").notNull(),
   phoneNumber: text("phone_number").notNull(),
-  licenseNumber: text("license_number").notNull(),
-  qualification: text("qualification").notNull(), // CDL Class A, B, C
+  qualifiedForOversized: boolean("qualified_for_oversized").default(false),
+  standardBillingRate: text("standard_billing_rate").notNull(),
+  overtimeBillingRate: text("overtime_billing_rate").notNull(),
   isAvailable: boolean("is_available").default(true),
-  experience: text("experience"), // years of experience
-  specializations: text("specializations"), // flatbed, hazmat, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 

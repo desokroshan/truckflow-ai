@@ -382,9 +382,10 @@ export function LoadDashboardWithAssignments() {
                           <h4 className="font-medium text-green-800 mb-2">Recommended Driver</h4>
                           <div className="space-y-1 text-sm text-green-700">
                             <div><strong>{recommendations.recommendedDriver.name}</strong></div>
-                            <div>{recommendations.recommendedDriver.qualification}</div>
-                            <div>{recommendations.recommendedDriver.experience}</div>
-                            <div>{recommendations.recommendedDriver.specializations}</div>
+                            <div>{recommendations.recommendedDriver.email}</div>
+                            <div>{recommendations.recommendedDriver.phoneNumber}</div>
+                            <div>Oversized Qualified: {recommendations.recommendedDriver.qualifiedForOversized ? "Yes" : "No"}</div>
+                            <div>Standard Rate: {recommendations.recommendedDriver.standardBillingRate}</div>
                           </div>
                         </div>
                       )}
@@ -401,7 +402,7 @@ export function LoadDashboardWithAssignments() {
                                 <div className="flex flex-col">
                                   <span className="font-medium">{driver.name}</span>
                                   <span className="text-xs text-gray-500">
-                                    {driver.qualification} • {driver.experience}
+                                    {driver.email} • {driver.standardBillingRate}
                                   </span>
                                 </div>
                               </SelectItem>

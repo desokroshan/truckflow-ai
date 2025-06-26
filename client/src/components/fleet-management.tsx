@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,11 +133,11 @@ export function FleetManagement() {
     const formData = new FormData(e.currentTarget);
     const driverData = {
       name: formData.get("name") as string,
+      email: formData.get("email") as string,
       phoneNumber: formData.get("phoneNumber") as string,
-      licenseNumber: formData.get("licenseNumber") as string,
-      qualification: formData.get("qualification") as string,
-      experience: formData.get("experience") as string,
-      specializations: formData.get("specializations") as string,
+      qualifiedForOversized: formData.get("qualifiedForOversized") === 'on',
+      standardBillingRate: formData.get("standardBillingRate") as string,
+      overtimeBillingRate: formData.get("overtimeBillingRate") as string,
       isAvailable: true,
     };
     createDriverMutation.mutate(driverData);
@@ -241,37 +240,28 @@ export function FleetManagement() {
                     </DialogHeader>
                     <form onSubmit={handleDriverSubmit} className="space-y-4">
                       <div>
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name">Driver Name</Label>
                         <Input id="name" name="name" required />
                       </div>
                       <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" required />
+                      </div>
+                      <div>
                         <Label htmlFor="phoneNumber">Phone Number</Label>
-                        <Input id="phoneNumber" name="phoneNumber" type="tel" required />
+                        <Input id="phoneNumber" name="phoneNumber" required />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input type="checkbox" id="qualifiedForOversized" name="qualifiedForOversized" />
+                        <Label htmlFor="qualifiedForOversized">Qualified for oversized loads</Label>
                       </div>
                       <div>
-                        <Label htmlFor="licenseNumber">License Number</Label>
-                        <Input id="licenseNumber" name="licenseNumber" required />
+                        <Label htmlFor="standardBillingRate">Standard Billing Rate</Label>
+                        <Input id="standardBillingRate" name="standardBillingRate" placeholder="e.g., $45/Hr" required />
                       </div>
                       <div>
-                        <Label htmlFor="qualification">Qualification</Label>
-                        <Select name="qualification" required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select qualification" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="CDL Class A">CDL Class A</SelectItem>
-                            <SelectItem value="CDL Class B">CDL Class B</SelectItem>
-                            <SelectItem value="CDL Class C">CDL Class C</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="experience">Experience</Label>
-                        <Input id="experience" name="experience" placeholder="e.g., 5 years" />
-                      </div>
-                      <div>
-                        <Label htmlFor="specializations">Specializations</Label>
-                        <Input id="specializations" name="specializations" placeholder="e.g., Flatbed, Hazmat" />
+                        <Label htmlFor="overtimeBillingRate">Overtime Billing Rate</Label>
+                        <Input id="overtimeBillingRate" name="overtimeBillingRate" placeholder="e.g., $55/Hr" required />
                       </div>
                       <Button type="submit" disabled={createDriverMutation.isPending}>
                         {createDriverMutation.isPending ? "Adding..." : "Add Driver"}

@@ -368,105 +368,105 @@ export class MemStorage implements IStorage {
       isActive: true,
     });
 
-    // Updated driver roster with enhanced information
+    // Updated driver roster with new schema format
     this.createDriver({
       name: "Arturo Magallanes",
+      email: "arturo.magallanes23@gmail.com",
       phoneNumber: "(562) 376-7898",
-      licenseNumber: "CDL-AM001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Oversized Load Specialist (Partial)",
-      specializations: "Heavy Equipment Transport, Standard Billing: $37/Hr & $40/Hr oversized & weekends"
+      qualifiedForOversized: true,
+      standardBillingRate: "$37/Hr",
+      overtimeBillingRate: "$40/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Carlos Soto",
+      email: "carlossoto1594@gmail.com",
       phoneNumber: "(562) 381-5457",
-      licenseNumber: "CDL-CS001",
-      qualification: "CDL Class A - Oversized Loads Certified",
-      isAvailable: true,
-      experience: "Oversized Load Specialist",
-      specializations: "Specialized Equipment, Billing: $45/Hr Reg. & $55/Hr Oversized"
+      qualifiedForOversized: true,
+      standardBillingRate: "$45/Hr",
+      overtimeBillingRate: "$55/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Damon Uribes",
+      email: "duribes@me.com",
       phoneNumber: "(626) 676-2402",
-      licenseNumber: "CDL-DU001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Heavy Haul, Standard Billing: $75/Hr"
+      qualifiedForOversized: false,
+      standardBillingRate: "$75/Hr",
+      overtimeBillingRate: "$75/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Frank Mora",
+      email: "frank@expedite-transport.com",
       phoneNumber: "(562) 964-8643",
-      licenseNumber: "CDL-FM001",
-      qualification: "CDL Class A - Oversized Loads Certified",
-      isAvailable: true,
-      experience: "Senior Driver & Operations",
-      specializations: "Equipment Transport, Dispatch, Billing: $45/Hr"
+      qualifiedForOversized: true,
+      standardBillingRate: "$45/Hr",
+      overtimeBillingRate: "$45/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Jonathan E McKinsey",
+      email: "jstar.transportationllc@gmail.com",
       phoneNumber: "(323) 243-9607",
-      licenseNumber: "CDL-JM001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Long Distance Transport, Billing: $85/Hr"
+      qualifiedForOversized: false,
+      standardBillingRate: "$85/Hr",
+      overtimeBillingRate: "$85/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Kyle Summerell",
+      email: "explicit6898@gmail.com",
       phoneNumber: "(919) 922-7389",
-      licenseNumber: "CDL-KS001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Heavy Equipment, Billing: $40/Hr"
+      qualifiedForOversized: false,
+      standardBillingRate: "$40/Hr",
+      overtimeBillingRate: "$40/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Moises R Martinez",
+      email: "ramosmoisese9285@gmail.com",
       phoneNumber: "(323) 420-9211",
-      licenseNumber: "CDL-MM001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Specialized Transport, Billing: $38/Hr & $40/Hr weekends"
+      qualifiedForOversized: false,
+      standardBillingRate: "$38/Hr",
+      overtimeBillingRate: "$40/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Noe Manfredy Ayala",
+      email: "Noeayala7500@gmail.com",
       phoneNumber: "(323) 422-3505",
-      licenseNumber: "CDL-NA001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Heavy Haul Equipment, Billing: $45/Hr"
+      qualifiedForOversized: false,
+      standardBillingRate: "$45/Hr",
+      overtimeBillingRate: "$45/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Rafael Miranda",
+      email: "Abmlogisticala@gmail.com",
       phoneNumber: "(323) 907-7470",
-      licenseNumber: "CDL-RM001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Equipment Transport, Billing: $70/Hr $80/Hr Afterhours"
+      qualifiedForOversized: false,
+      standardBillingRate: "$70/Hr",
+      overtimeBillingRate: "$80/Hr",
+      isAvailable: true
     });
 
     this.createDriver({
       name: "Ronald Winans",
+      email: "rwinans2248@gmail.com",
       phoneNumber: "(562) 332-1326",
-      licenseNumber: "CDL-RW001",
-      qualification: "CDL Class A",
-      isAvailable: true,
-      experience: "Standard Commercial Driver",
-      specializations: "Heavy Equipment Transport, Billing: $35/Hr & $40/Hr weekends"
+      qualifiedForOversized: false,
+      standardBillingRate: "$35/Hr",
+      overtimeBillingRate: "$40/Hr",
+      isAvailable: true
     });
 
     // Actual fleet inventory - only trucks from the specified list

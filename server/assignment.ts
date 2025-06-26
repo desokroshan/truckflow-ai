@@ -80,10 +80,10 @@ export class AssignmentEngine {
   private selectDefaultDriver(availableDrivers: Driver[], loadRequest: LoadRequest): Driver | null {
     if (availableDrivers.length === 0) return null;
 
-    // Priority 1: Driver with CDL Class A (most versatile)
-    const classADrivers = availableDrivers.filter(d => d.qualification === "CDL Class A");
-    if (classADrivers.length > 0) {
-      return classADrivers[0];
+    // Priority 1: Driver qualified for oversized loads if needed
+    const oversizedQualified = availableDrivers.filter(d => d.qualifiedForOversized);
+    if (oversizedQualified.length > 0) {
+      return oversizedQualified[0];
     }
 
     // Priority 2: Any available driver
