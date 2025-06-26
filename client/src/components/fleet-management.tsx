@@ -16,12 +16,12 @@ import { toast } from "@/hooks/use-toast";
 interface Driver {
   id: number;
   name: string;
+  email: string;
   phoneNumber: string;
-  licenseNumber: string;
-  qualification: string;
+  qualifiedForOversized: boolean;
+  standardBillingRate: string;
+  overtimeBillingRate: string;
   isAvailable: boolean;
-  experience?: string;
-  specializations?: string;
 }
 
 interface TruckData {
@@ -280,8 +280,9 @@ export function FleetManagement() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Contact</TableHead>
-                      <TableHead>Qualification</TableHead>
-                      <TableHead>Experience</TableHead>
+                      <TableHead>Oversized Qualified</TableHead>
+                      <TableHead>Standard Rate</TableHead>
+                      <TableHead>Overtime Rate</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -290,9 +291,12 @@ export function FleetManagement() {
                     {drivers.map((driver: Driver) => (
                       <TableRow key={driver.id}>
                         <TableCell>
-                          <div className="flex items-center">
-                            <User className="w-4 h-4 mr-2 text-gray-400" />
-                            {driver.name}
+                          <div>
+                            <div className="flex items-center">
+                              <User className="w-4 h-4 mr-2 text-gray-400" />
+                              {driver.name}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">{driver.email}</div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -302,12 +306,16 @@ export function FleetManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="flex items-center">
-                            <Award className="w-3 h-3 mr-1" />
-                            {driver.qualification}
+                          <Badge variant={driver.qualifiedForOversized ? "default" : "secondary"}>
+                            {driver.qualifiedForOversized ? "Yes" : "No"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{driver.experience || "N/A"}</TableCell>
+                        <TableCell>
+                          <span className="font-medium">{driver.standardBillingRate}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">{driver.overtimeBillingRate}</span>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={driver.isAvailable ? "default" : "secondary"}>
                             {driver.isAvailable ? "Available" : "Busy"}
