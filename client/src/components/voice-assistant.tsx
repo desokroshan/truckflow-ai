@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ export default function VoiceAssistant({ onCommand }: VoiceAssistantProps) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setIsSupported(true);
-      
+
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -61,7 +60,7 @@ export default function VoiceAssistant({ onCommand }: VoiceAssistantProps) {
             title: "Franky Activated",
             description: "Voice assistant is now listening",
           });
-          
+
           // Auto-deactivate after 10 seconds
           setTimeout(() => {
             setIsActivated(false);
@@ -129,7 +128,7 @@ export default function VoiceAssistant({ onCommand }: VoiceAssistantProps) {
       setIsListening(true);
       toast({
         title: "Listening Started",
-        description: "Say 'Franky' to activate the voice assistant",
+        description: "Say 'Hey Franky' to activate the voice assistant",
       });
     }
   };
