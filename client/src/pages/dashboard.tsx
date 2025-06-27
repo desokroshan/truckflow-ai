@@ -10,6 +10,7 @@ import NotificationPanel from "@/components/notification-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Truck, Settings } from "lucide-react";
+import VoiceAssistant from "@/components/voice-assistant";
 
 export default function Dashboard({ user }: { user?: any }) {
   const [systemStatus] = useState("active");
@@ -107,6 +108,8 @@ export default function Dashboard({ user }: { user?: any }) {
             <NotificationPanel />
           </div>
         </div>
+            {/* Voice Assistant */}
+            <VoiceAssistant />
       </div>
     </div>
   );
