@@ -584,13 +584,17 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       // Handle incoming call
       await handleIncomingCall(phoneNumber, callSid);
 
+      // Get custom greeting message
+      const greetingSetting = await storage.getSetting("greeting_message");
+      const greetingMessage = greetingSetting?.value || "Thank you for calling Expedite Transport. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.";
+
       // Create TwiML response to handle the call
       const twiml = createTwiMLResponse();
 
       twiml.say({
         voice: "Polly.Joanna-Neural",
         language: "en-US"
-      }, "Thank you for calling Expedite Transport. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.");
+      }, greetingMessage);
 
       // Record the conversation
       twiml.record({
@@ -931,6 +935,46 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching metrics:", error);
       res.status(500).json({ error: "Failed to fetch metrics" });
+    }
+  });
+
+  // Settings management endpoints
+  app.get("/api/settings", authenticateToken, authorizeRole(['dispatcher']), async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.get("/api/settings/:key", authenticateToken, authorizeRole(['dispatcher']), async (req, res) => {
+    try {
+      const { key } = req.params;
+      const setting = await storage.getSetting(key);
+      if (!setting) {
+        return res.status(404).json({ error: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      console.error("Error fetching setting:", error);
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  app.post("/api/settings", authenticateToken, authorizeRole(['dispatcher']), async (req, res) => {
+    try {
+      const { key, value, description } = req.body;
+      if (!key || !value) {
+        return res.status(400).json({ error: "Key and value are required" });
+      }
+      
+      const setting = await storage.setSetting(key, value, description);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      res.status(500).json({ error: "Failed to update setting" });
     }
   });
 

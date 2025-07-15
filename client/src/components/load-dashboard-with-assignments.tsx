@@ -1,3 +1,7 @@
+The code is updated to include a rationale field for driver assignments and a customizable greeting message, enhancing the tool's functionality and data collection.
+```
+
+```replit_final_file
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +69,7 @@ export function LoadDashboardWithAssignments() {
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
+  const [rationale, setRationale] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Fetch load requests
@@ -111,11 +116,11 @@ export function LoadDashboardWithAssignments() {
 
   // Create assignment mutation
   const createAssignmentMutation = useMutation({
-    mutationFn: async (assignmentData: { loadRequestId: number; driverId?: number; truckId?: number }) => {
+    mutationFn: async (data: { loadRequestId: number; driverId?: number; truckId?: number; rationale?: string }) => {
       const response = await fetch("/api/assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(assignmentData),
+        body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error("Failed to create assignment");
       return response.json();
@@ -189,6 +194,7 @@ export function LoadDashboardWithAssignments() {
       loadRequestId: selectedLoad.id,
       driverId: selectedDriverId ? parseInt(selectedDriverId) : undefined,
       truckId: selectedTruckId ? parseInt(selectedTruckId) : undefined,
+      rationale: rationale ? rationale : undefined,
     };
 
     createAssignmentMutation.mutate(assignmentData);
@@ -200,6 +206,7 @@ export function LoadDashboardWithAssignments() {
     // Reset selections
     setSelectedDriverId("");
     setSelectedTruckId("");
+    setRationale("");
   };
 
   return (
@@ -458,6 +465,29 @@ export function LoadDashboardWithAssignments() {
                   </Card>
                 </div>
               ) : null}
+
+              {/* Rationale Input */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg">Assignment Rationale</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div>
+                    <Label htmlFor="rationale">Why did you choose this driver and truck combination?</Label>
+                    <textarea
+                      id="rationale"
+                      className="w-full mt-2 p-3 border border-gray-300 rounded-md resize-none"
+                      rows={4}
+                      value={rationale}
+                      onChange={(e) => setRationale(e.target.value)}
+                      placeholder="Enter your reasoning for this assignment (e.g., driver experience, truck type match, location proximity, etc.)"
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      This information will be used to train our AI for future automatic assignments.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsAssignmentDialogOpen(false)}>

@@ -82,6 +82,7 @@ export const assignments = pgTable("assignments", {
   truckId: integer("truck_id").references(() => trucks.id),
   assignedAt: timestamp("assigned_at").defaultNow(),
   status: text("status").notNull().default("assigned"), // assigned, in_transit, completed
+  rationale: text("rationale"), // User's rationale for the assignment decision
 });
 
 export const documents = pgTable("documents", {
@@ -93,6 +94,14 @@ export const documents = pgTable("documents", {
   filePath: text("file_path").notNull(),
   fileSize: integer("file_size"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -117,6 +126,11 @@ export const signupSchema = z.object({
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   uploadedAt: true,
+});
+
+export const insertSettingsSchema = createInsertSchema(settings).omit({
+  id: true,
+  updatedAt: true,
 });
 
 export const insertLoadRequestSchema = createInsertSchema(loadRequests).omit({
@@ -161,3 +175,5 @@ export type Assignment = typeof assignments.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Settings = typeof settings.$inferSelect;
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;

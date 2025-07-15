@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Truck, Settings } from "lucide-react";
 import VoiceAssistant from "@/components/voice-assistant";
+import SettingsPanel from "@/components/settings-panel";
 
 export default function Dashboard({ user }: { user?: any }) {
   const [systemStatus] = useState("active");
@@ -61,13 +62,14 @@ export default function Dashboard({ user }: { user?: any }) {
         {/* Load Dashboard - positioned right after status tiles */}
         <div className="mt-8">
           <Tabs defaultValue="loads" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="loads">Load Requests</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="fleet">Fleet</TabsTrigger>
           <TabsTrigger value="ai">AI Processing</TabsTrigger>
           <TabsTrigger value="setup">Setup</TabsTrigger>
           <TabsTrigger value="simulator">Simulator</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="loads">
@@ -92,6 +94,10 @@ export default function Dashboard({ user }: { user?: any }) {
 
         <TabsContent value="simulator">
           <CallSimulator />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <SettingsPanel />
         </TabsContent>
       </Tabs>
         </div>
