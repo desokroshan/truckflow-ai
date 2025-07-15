@@ -1,7 +1,3 @@
-The code is updated to include a rationale field for driver assignments and a customizable greeting message, enhancing the tool's functionality and data collection.
-```
-
-```replit_final_file
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,10 +29,12 @@ interface LoadRequest {
 interface Driver {
   id: number;
   name: string;
+  email: string;
   phoneNumber: string;
-  qualification: string;
-  experience?: string;
-  specializations?: string;
+  qualifiedForOversized: boolean;
+  standardBillingRate: string;
+  overtimeBillingRate: string;
+  isAvailable: boolean;
 }
 
 interface TruckData {
