@@ -325,13 +325,13 @@ export function LoadDashboardWithAssignments() {
 
       {/* Assignment Dialog */}
       <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Driver & Truck - {selectedLoad?.loadId}</DialogTitle>
           </DialogHeader>
 
           {selectedLoad && (
-            <div className="space-y-6">
+            <div className="space-y-6 pb-4">
               {/* Load Details */}
               <Card>
                 <CardHeader>
