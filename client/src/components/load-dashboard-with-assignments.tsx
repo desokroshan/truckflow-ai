@@ -53,6 +53,8 @@ interface Assignment {
   driverId?: number;
   truckId?: number;
   status: string;
+  rationale?: string;
+  assignedAt?: string;
 }
 
 interface Recommendations {
@@ -65,6 +67,8 @@ interface Recommendations {
 export function LoadDashboardWithAssignments() {
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+  const [isAssignmentDetailsOpen, setIsAssignmentDetailsOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
   const [rationale, setRationale] = useState<string>("");
@@ -110,6 +114,26 @@ export function LoadDashboardWithAssignments() {
       return response.json();
     },
     enabled: !!selectedLoad,
+  });
+
+  // Fetch all drivers for assignment details
+  const { data: allDrivers = [] } = useQuery({
+    queryKey: ["drivers"],
+    queryFn: async () => {
+      const response = await fetch("/api/drivers");
+      if (!response.ok) throw new Error("Failed to fetch drivers");
+      return response.json();
+    },
+  });
+
+  // Fetch all trucks for assignment details
+  const { data: allTrucks = [] } = useQuery({
+    queryKey: ["trucks"],
+    queryFn: async () => {
+      const response = await fetch("/api/trucks");
+      if (!response.ok) throw new Error("Failed to fetch trucks");
+      return response.json();
+    },
   });
 
   // Create assignment mutation
@@ -207,6 +231,11 @@ export function LoadDashboardWithAssignments() {
     setRationale("");
   };
 
+  const viewAssignmentDetails = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setIsAssignmentDetailsOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -273,9 +302,19 @@ export function LoadDashboardWithAssignments() {
                       </TableCell>
                       <TableCell>
                         {assignment ? (
-                          <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                            Assigned
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                              Assigned
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => viewAssignmentDetails(assignment)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              View Details
+                            </Button>
+                          </div>
                         ) : (
                           <Badge variant="outline" className="bg-gray-100 text-gray-600">
                             Unassigned
@@ -498,6 +537,68 @@ export function LoadDashboardWithAssignments() {
                   {createAssignmentMutation.isPending ? "Creating Assignment..." : "Create Assignment"}
                 </Button>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Details Dialog */}
+      <Dialog open={isAssignmentDetailsOpen} onOpenChange={setIsAssignmentDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Assignment Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedAssignment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Assignment Info</h4>
+                  <div className="space-y-2 text-sm">
+                    <div><strong>Assignment ID:</strong> {selectedAssignment.id}</div>
+                    <div><strong>Status:</strong> {selectedAssignment.status}</div>
+                    {selectedAssignment.assignedAt && (
+                      <div><strong>Assigned At:</strong> {new Date(selectedAssignment.assignedAt).toLocaleString()}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Resources</h4>
+                  <div className="space-y-2 text-sm">
+                    {selectedAssignment.driverId && (
+                      <div>
+                        <strong>Driver:</strong> {allDrivers.find((d: Driver) => d.id === selectedAssignment.driverId)?.name || `ID: ${selectedAssignment.driverId}`}
+                      </div>
+                    )}
+                    {selectedAssignment.truckId && (
+                      <div>
+                        <strong>Truck:</strong> {allTrucks.find((t: TruckData) => t.id === selectedAssignment.truckId)?.truckNumber || `ID: ${selectedAssignment.truckId}`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {selectedAssignment.rationale && (
+                <div>
+                  <h4 className="font-medium mb-2">Assignment Rationale</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700">{selectedAssignment.rationale}</p>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    This rationale was provided when the assignment was created and helps improve future automatic assignments.
+                  </p>
+                </div>
+              )}
+
+              {!selectedAssignment.rationale && (
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-sm text-yellow-700">
+                    No rationale was provided for this assignment.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
