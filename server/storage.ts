@@ -576,10 +576,35 @@ export class MemStorage implements IStorage {
       currentLocation: "Yard"
     });
 
-    // Initialize default settings
-    this.setSetting("greeting_message", "Hello! Thank you for calling TruckFlow. How can I help you today?", "Default greeting message for phone calls");
-    this.setSetting("notification_email", "owner@truckflow.com", "Email address for load notifications");
-    this.setSetting("sms_notifications", "true", "Enable SMS notifications for new loads");
+    // Initialize default settings synchronously
+    this.initializeDefaultSettings();
+  }
+
+  private initializeDefaultSettings() {
+    // Initialize settings directly in the map to avoid async issues
+    this.settings.set("greeting_message", {
+      id: this.currentSettingsId++,
+      key: "greeting_message",
+      value: "Hello! Thank you for calling TruckFlow. How can I help you today?",
+      description: "Default greeting message for phone calls",
+      updatedAt: new Date()
+    });
+
+    this.settings.set("notification_email", {
+      id: this.currentSettingsId++,
+      key: "notification_email",
+      value: "owner@truckflow.com",
+      description: "Email address for load notifications",
+      updatedAt: new Date()
+    });
+
+    this.settings.set("sms_notifications", {
+      id: this.currentSettingsId++,
+      key: "sms_notifications",
+      value: "true",
+      description: "Enable SMS notifications for new loads",
+      updatedAt: new Date()
+    });
   }
 
   // Settings methods
