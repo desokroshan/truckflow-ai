@@ -1,0 +1,52 @@
+Error fetching setting: TypeError: storage.getSetting is not a function
+    at <anonymous> (/Users/roshankumar/workspace/truckflow-ai/server/routes.ts:955:37)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/route.js:149:13)
+    at <anonymous> (/Users/roshankumar/workspace/truckflow-ai/server/routes.ts:64:5)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/route.js:149:13)
+    at <anonymous> (/Users/roshankumar/workspace/truckflow-ai/server/routes.ts:54:5)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/jsonwebtoken/verify.js:261:12
+    at getSecret (/Users/roshankumar/workspace/truckflow-ai/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/roshankumar/workspace/truckflow-ai/node_modules/jsonwebtoken/verify.js:101:10)
+    at authenticateToken (/Users/roshankumar/workspace/truckflow-ai/server/routes.ts:47:7)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:284:15
+    at param (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:365:14)
+    at param (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:376:14)
+    at Function.process_params (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:421:3)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:280:10)
+    at <anonymous> (/Users/roshankumar/workspace/truckflow-ai/server/index.ts:91:3)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:328:13)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:280:10)
+    at urlencodedParser (/Users/roshankumar/workspace/truckflow-ai/node_modules/body-parser/lib/types/urlencoded.js:94:7)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:328:13)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:280:10)
+    at jsonParser (/Users/roshankumar/workspace/truckflow-ai/node_modules/body-parser/lib/types/json.js:113:7)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:328:13)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:280:10)
+    at expressInit (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/middleware/init.js:40:5)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:328:13)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:280:10)
+    at query (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/middleware/query.js:45:5)
+    at Layer.handle [as handle_request] (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:328:13)
+    at /Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/roshankumar/workspace/truckflow-ai/node_modules/express/lib/router/index.js:280:10)
+9:21:56 PM [express] GET /api/settings/greeting_message 500 in 25ms :: {"error":"Failed to fetch set…

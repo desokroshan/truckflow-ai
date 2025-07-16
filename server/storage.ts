@@ -1,4 +1,4 @@
-import { users, loadRequests, callLogs, drivers, trucks, assignments, type User, type InsertUser, type LoadRequest, type InsertLoadRequest, type CallLog, type InsertCallLog, type Driver, type InsertDriver, type Truck, type InsertTruck, type Assignment, type InsertAssignment } from "@shared/schema";
+import { users, loadRequests, callLogs, drivers, trucks, assignments, documents, settings, type User, type InsertUser, type LoadRequest, type InsertLoadRequest, type CallLog, type InsertCallLog, type Driver, type InsertDriver, type Truck, type InsertTruck, type Assignment, type InsertAssignment, type Document, type InsertDocument, type Settings, type InsertSettings } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -39,6 +39,22 @@ export interface IStorage {
   getAllAssignments(): Promise<Assignment[]>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   updateAssignmentStatus(id: number, status: string): Promise<Assignment | undefined>;
+
+  // Documents
+  createDocument(document: InsertDocument): Promise<Document>;
+  getDocumentsByLoadRequest(loadRequestId: number): Promise<Document[]>;
+  getAllDocuments(): Promise<Document[]>;
+
+  // Settings
+  getSetting(key: string): Promise<Settings | undefined>;
+  getAllSettings(): Promise<Settings[]>;
+  setSetting(key: string, value: string, description?: string): Promise<Settings>;
+
+  // Users (additional methods)
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserById(id: number): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  getLoadRequestsByShipper(shipperId: number): Promise<LoadRequest[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -48,6 +64,8 @@ export class MemStorage implements IStorage {
   private drivers: Map<number, Driver>;
   private trucks: Map<number, Truck>;
   private assignments: Map<number, Assignment>;
+  private documents = new Map<number, Document>();
+  private settings = new Map<string, Settings>();
   private currentUserId: number;
   private currentLoadRequestId: number;
   private currentCallLogId: number;
@@ -55,7 +73,7 @@ export class MemStorage implements IStorage {
   private currentTruckId: number;
   private currentAssignmentId: number;
   private currentDocumentId = 1;
-  private documents = new Map<number, Document>();
+  private currentSettingsId = 1;
 
   constructor() {
     this.users = new Map();
@@ -557,6 +575,85 @@ export class MemStorage implements IStorage {
       isAvailable: true,
       currentLocation: "Yard"
     });
+
+    // Initialize default settings
+    this.setSetting("greeting_message", "Hello! Thank you for calling TruckFlow. How can I help you today?", "Default greeting message for phone calls");
+    this.setSetting("notification_email", "owner@truckflow.com", "Email address for load notifications");
+    this.setSetting("sms_notifications", "true", "Enable SMS notifications for new loads");
+  }
+
+  // Settings methods
+  async getSetting(key: string): Promise<Settings | undefined> {
+    return this.settings.get(key);
+  }
+
+  async getAllSettings(): Promise<Settings[]> {
+    return Array.from(this.settings.values());
+  }
+
+  async setSetting(key: string, value: string, description?: string): Promise<Settings> {
+    const existingSetting = this.settings.get(key);
+    if (existingSetting) {
+      const updatedSetting: Settings = {
+        ...existingSetting,
+        value,
+        description: description || existingSetting.description,
+        updatedAt: new Date()
+      };
+      this.settings.set(key, updatedSetting);
+      return updatedSetting;
+    } else {
+      const newSetting: Settings = {
+        id: this.currentSettingsId++,
+        key,
+        value,
+        description,
+        updatedAt: new Date()
+      };
+      this.settings.set(key, newSetting);
+      return newSetting;
+    }
+  }
+
+  // Additional user methods
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getLoadRequestsByShipper(shipperId: number): Promise<LoadRequest[]> {
+    return Array.from(this.loadRequests.values()).filter(
+      loadRequest => loadRequest.shipperId === shipperId
+    );
+  }
+
+  // Document methods
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const id = this.currentDocumentId++;
+    const document: Document = {
+      ...insertDocument,
+      id,
+      uploadedAt: new Date(),
+    };
+    this.documents.set(id, document);
+    return document;
+  }
+
+  async getDocumentsByLoadRequest(loadRequestId: number): Promise<Document[]> {
+    return Array.from(this.documents.values()).filter(
+      document => document.loadRequestId === loadRequestId
+    );
+  }
+
+  async getAllDocuments(): Promise<Document[]> {
+    return Array.from(this.documents.values());
   }
 }
 
