@@ -289,13 +289,11 @@ export function LoadDashboardWithAssignments() {
   };
 
   const possibleMissingFields = [
+    "Pickup Address", // Required
+    "Delivery Address", // Required  
+    "Cargo Details", // Required
     "Customer Name",
     "Customer Phone",
-    "Pickup Location",
-    "Pickup Address",
-    "Delivery Location", 
-    "Delivery Address",
-    "Cargo Type",
     "Weight",
     "Truck Type",
     "Pickup Time",
@@ -738,19 +736,41 @@ export function LoadDashboardWithAssignments() {
               <div>
                 <Label className="text-base font-medium">Missing Fields</Label>
                 <p className="text-sm text-gray-600 mb-3">Select all fields that are missing or need clarification:</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {possibleMissingFields.map((field) => (
-                    <div key={field} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={field}
-                        checked={selectedMissingFields.includes(field)}
-                        onCheckedChange={() => toggleMissingField(field)}
-                      />
-                      <Label htmlFor={field} className="text-sm cursor-pointer">
-                        {field}
-                      </Label>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-medium text-red-700 mb-2">Required Fields (Essential)</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {possibleMissingFields.slice(0, 3).map((field) => (
+                        <div key={field} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={field}
+                            checked={selectedMissingFields.includes(field)}
+                            onCheckedChange={() => toggleMissingField(field)}
+                          />
+                          <Label htmlFor={field} className="text-sm cursor-pointer font-medium text-red-800">
+                            {field}
+                          </Label>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Optional Fields</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {possibleMissingFields.slice(3).map((field) => (
+                        <div key={field} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={field}
+                            checked={selectedMissingFields.includes(field)}
+                            onCheckedChange={() => toggleMissingField(field)}
+                          />
+                          <Label htmlFor={field} className="text-sm cursor-pointer">
+                            {field}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 

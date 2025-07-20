@@ -8,21 +8,19 @@ export interface ValidationResult {
   completedFieldsCount: number;
 }
 
-// Define required fields for a complete load request
+// Define required fields for a complete load request (only truly essential fields)
 const REQUIRED_FIELDS = [
-  'customerName',
-  'customerPhone', 
-  'pickupLocation',
-  'pickupAddress',
-  'deliveryLocation',
-  'deliveryAddress',
-  'cargoType',
-  'weight',
-  'truckType'
+  'pickupAddress', // Combined pickup location/address - only one needed
+  'deliveryAddress', // Combined delivery location/address - only one needed  
+  'cargoType' // Load/cargo details
 ];
 
 // Define optional but important fields
 const IMPORTANT_FIELDS = [
+  'customerName',
+  'customerPhone',
+  'weight',
+  'truckType',
   'pickupTime',
   'deliveryTime',
   'deadline'
@@ -30,13 +28,11 @@ const IMPORTANT_FIELDS = [
 
 // Field display names for user-friendly messages
 const FIELD_DISPLAY_NAMES: Record<string, string> = {
-  customerName: "Customer Name",
-  customerPhone: "Customer Phone Number",
-  pickupLocation: "Pickup Location",
   pickupAddress: "Pickup Address",
-  deliveryLocation: "Delivery Location", 
   deliveryAddress: "Delivery Address",
-  cargoType: "Cargo Type",
+  cargoType: "Cargo Details",
+  customerName: "Customer Name",
+  customerPhone: "Customer Phone Number", 
   weight: "Weight",
   truckType: "Truck Type",
   pickupTime: "Pickup Time Window",
@@ -48,14 +44,38 @@ export function validateLoadRequest(loadRequest: LoadRequest): ValidationResult 
   const missingFields: string[] = [];
   let completedFieldsCount = 0;
 
-  // Check required fields
-  for (const field of REQUIRED_FIELDS) {
-    const value = (loadRequest as any)[field];
-    if (!value || value.toString().trim() === '' || value === 'null' || value === 'undefined') {
-      missingFields.push(field);
-    } else {
-      completedFieldsCount++;
-    }
+  // Check pickup address (can be either pickupLocation or pickupAddress)
+  const hasPickupAddress = 
+    (loadRequest.pickupAddress && loadRequest.pickupAddress.trim() !== '' && loadRequest.pickupAddress !== 'null') ||
+    (loadRequest.pickupLocation && loadRequest.pickupLocation.trim() !== '' && loadRequest.pickupLocation !== 'null');
+  
+  if (!hasPickupAddress) {
+    missingFields.push('pickupAddress');
+  } else {
+    completedFieldsCount++;
+  }
+
+  // Check delivery address (can be either deliveryLocation or deliveryAddress)  
+  const hasDeliveryAddress = 
+    (loadRequest.deliveryAddress && loadRequest.deliveryAddress.trim() !== '' && loadRequest.deliveryAddress !== 'null') ||
+    (loadRequest.deliveryLocation && loadRequest.deliveryLocation.trim() !== '' && loadRequest.deliveryLocation !== 'null');
+  
+  if (!hasDeliveryAddress) {
+    missingFields.push('deliveryAddress');
+  } else {
+    completedFieldsCount++;
+  }
+
+  // Check cargo details
+  const hasCargoDetails = loadRequest.cargoType && 
+    loadRequest.cargoType.trim() !== '' && 
+    loadRequest.cargoType !== 'null' && 
+    loadRequest.cargoType !== 'undefined';
+  
+  if (!hasCargoDetails) {
+    missingFields.push('cargoType');
+  } else {
+    completedFieldsCount++;
   }
 
   // Calculate validation score
@@ -121,12 +141,12 @@ export function autoValidateLoadRequest(loadRequest: LoadRequest): {
 } {
   const validation = validateLoadRequest(loadRequest);
   
-  // Auto-flag if missing more than 2 required fields or validation score is below 70%
-  const autoFlag = validation.missingFields.length > 2 || validation.validationScore < 70;
+  // Auto-flag only if any required field is missing (pickup address, delivery address, or cargo details)
+  const autoFlag = validation.missingFields.length > 0;
   
   let validationStatus = "complete";
   if (!validation.isValid) {
-    validationStatus = autoFlag ? "missing_details" : "requires_review";
+    validationStatus = "missing_details";
   }
 
   return {
