@@ -585,7 +585,7 @@ export class MemStorage implements IStorage {
     this.settings.set("greeting_message", {
       id: this.currentSettingsId++,
       key: "greeting_message",
-      value: "Hello! Thank you for calling TruckFlow. How can I help you today?",
+      value: "Thank you for calling Expedite Transport. I'm Freya and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.",
       description: "Default greeting message for phone calls",
       updatedAt: new Date()
     });
