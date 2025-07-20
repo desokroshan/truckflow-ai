@@ -3,6 +3,7 @@ import { storage } from './storage';
 import { transcribeAudio, extractLoadInfo, generateLoadSummary } from './openai';
 import { sendOwnerNotification, sendOwnerSMS } from './email';
 import { saveLoadToGoogleSheets } from './googleSheets';
+import { autoValidateLoadRequest, getValidationSummary } from './validation';
 import { nanoid } from 'nanoid';
 
 let client: ReturnType<typeof twilio>;
@@ -263,6 +264,18 @@ export async function processRecordingWebhook(
       extractedData: JSON.stringify(extractedData),
       notificationSent: false,
     });
+
+    // Auto-validate the load request
+    const validation = autoValidateLoadRequest(loadRequest);
+    if (validation.autoFlag) {
+      console.log(`Auto-flagging load ${loadId} for missing details: ${validation.missingFields.join(', ')}`);
+      await storage.updateLoadRequestValidation(
+        loadRequest.id,
+        validation.validationStatus,
+        validation.missingFields,
+        `Auto-flagged: Missing ${validation.missingFields.length} required fields. AI extraction may have been incomplete.`
+      );
+    }
 
     // Update call log with transcription and link to load request
     await storage.updateCallLogTranscription(

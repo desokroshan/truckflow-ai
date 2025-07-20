@@ -1,12 +1,13 @@
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLoadRequestSchema, insertCallLogSchema } from "@shared/schema";
+import { insertLoadRequestSchema, insertCallLogSchema, flagLoadRequestSchema } from "@shared/schema";
 import { transcribeAudio, extractLoadInfo, generateLoadSummary } from "./openai";
 import { sendOwnerNotification, sendOwnerSMS } from "./email";
 import express from "express";
 import { Express } from "express";
 import { saveLoadToGoogleSheets, initializeGoogleSheet, updateLoadStatusInGoogleSheets } from "./googleSheets";
 import { processIncomingEmail } from "./email";
+import { validateLoadRequest, getValidationSummary, autoValidateLoadRequest, categorizeLoadRequests } from "./validation";
 import { createTwiMLResponse, createSMSTwiMLResponse, handleIncomingCall, processRecordingWebhook, processSMSWebhook } from "./twilio";
 import { assignmentEngine } from "./assignment";
 import multer from "multer";
@@ -562,6 +563,122 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error("Error rejecting load request:", error);
       res.status(500).json({ error: "Failed to reject load request" });
+    }
+  });
+
+  // Validate load request completeness
+  app.get("/api/load-requests/:id/validate", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const { id } = req.params;
+      const loadRequest = await storage.getLoadRequest(parseInt(id));
+
+      if (!loadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      const validation = validateLoadRequest(loadRequest);
+      const summary = getValidationSummary(loadRequest);
+
+      res.json({
+        loadRequest,
+        validation,
+        summary
+      });
+    } catch (error) {
+      console.error("Error validating load request:", error);
+      res.status(500).json({ error: "Failed to validate load request" });
+    }
+  });
+
+  // Flag load request for missing details
+  app.post("/api/load-requests/:id/flag", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const { id } = req.params;
+      const flagData = flagLoadRequestSchema.parse(req.body);
+      
+      const updatedLoadRequest = await storage.flagLoadRequestForReview(
+        parseInt(id),
+        flagData.missingFields,
+        flagData.validationNotes,
+        flagData.validationStatus,
+        req.user.id
+      );
+
+      if (!updatedLoadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      // Send notification about flagged load
+      try {
+        await sendOwnerNotification(
+          `Load Request Flagged for Review`,
+          `Load ${updatedLoadRequest.loadId} has been flagged for missing details:\n\n` +
+          `Missing Fields: ${flagData.missingFields.join(', ')}\n` +
+          `Notes: ${flagData.validationNotes}\n\n` +
+          `Please review and contact the customer for additional information.`
+        );
+      } catch (emailError) {
+        console.error("Failed to send flag notification:", emailError);
+        // Continue with response even if email fails
+      }
+
+      res.json({ 
+        message: "Load request flagged for review", 
+        loadRequest: updatedLoadRequest 
+      });
+    } catch (error) {
+      console.error("Error flagging load request:", error);
+      res.status(500).json({ error: "Failed to flag load request" });
+    }
+  });
+
+  // Update load request validation status
+  app.put("/api/load-requests/:id/validation", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const { id } = req.params;
+      const { validationStatus, missingFields, validationNotes } = req.body;
+      
+      const updatedLoadRequest = await storage.updateLoadRequestValidation(
+        parseInt(id),
+        validationStatus,
+        missingFields,
+        validationNotes
+      );
+
+      if (!updatedLoadRequest) {
+        return res.status(404).json({ error: "Load request not found" });
+      }
+
+      res.json({ 
+        message: "Validation status updated", 
+        loadRequest: updatedLoadRequest 
+      });
+    } catch (error) {
+      console.error("Error updating validation status:", error);
+      res.status(500).json({ error: "Failed to update validation status" });
+    }
+  });
+
+  // Get load requests needing review
+  app.get("/api/load-requests/needs-review", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const loadRequests = await storage.getLoadRequestsNeedingReview();
+      res.json(loadRequests);
+    } catch (error) {
+      console.error("Error fetching load requests needing review:", error);
+      res.status(500).json({ error: "Failed to fetch load requests needing review" });
+    }
+  });
+
+  // Get categorized load requests (complete, missing details, needs review)
+  app.get("/api/load-requests/categorized", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const allLoadRequests = await storage.getAllLoadRequests();
+      const categorized = categorizeLoadRequests(allLoadRequests);
+      res.json(categorized);
+    } catch (error) {
+      console.error("Error categorizing load requests:", error);
+      res.status(500).json({ error: "Failed to categorize load requests" });
     }
   });
 

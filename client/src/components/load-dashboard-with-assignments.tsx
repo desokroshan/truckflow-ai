@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, Eye, User, Truck, MapPin, Package, Weight, Calendar, Phone } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Check, X, Eye, User, Truck, MapPin, Package, Weight, Calendar, Phone, AlertTriangle, Flag, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface LoadRequest {
@@ -24,6 +26,11 @@ interface LoadRequest {
   status: string;
   createdAt: string;
   deadline?: string;
+  validationStatus?: string;
+  missingFields?: string;
+  validationNotes?: string;
+  flaggedForReview?: boolean;
+  flaggedAt?: string;
 }
 
 interface Driver {
@@ -68,10 +75,13 @@ export function LoadDashboardWithAssignments() {
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [isAssignmentDetailsOpen, setIsAssignmentDetailsOpen] = useState(false);
+  const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
   const [rationale, setRationale] = useState<string>("");
+  const [flagNotes, setFlagNotes] = useState<string>("");
+  const [selectedMissingFields, setSelectedMissingFields] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   // Fetch load requests
@@ -190,6 +200,27 @@ export function LoadDashboardWithAssignments() {
     },
   });
 
+  // Flag load mutation
+  const flagLoadMutation = useMutation({
+    mutationFn: async (data: { loadId: number; missingFields: string[]; validationNotes: string; validationStatus: string }) => {
+      const response = await fetch(`/api/load-requests/${data.loadId}/flag`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to flag load request");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["load-requests"] });
+      setIsFlagDialogOpen(false);
+      setSelectedLoad(null);
+      setFlagNotes("");
+      setSelectedMissingFields([]);
+      toast({ title: "Load request flagged successfully" });
+    },
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -236,6 +267,51 @@ export function LoadDashboardWithAssignments() {
     setIsAssignmentDetailsOpen(true);
   };
 
+  const openFlagDialog = (load: LoadRequest) => {
+    setSelectedLoad(load);
+    setIsFlagDialogOpen(true);
+    setFlagNotes("");
+    setSelectedMissingFields([]);
+  };
+
+  const handleFlagSubmit = () => {
+    if (!selectedLoad || selectedMissingFields.length === 0 || !flagNotes.trim()) {
+      toast({ title: "Please select missing fields and provide notes", variant: "destructive" });
+      return;
+    }
+
+    flagLoadMutation.mutate({
+      loadId: selectedLoad.id,
+      missingFields: selectedMissingFields,
+      validationNotes: flagNotes,
+      validationStatus: "requires_review"
+    });
+  };
+
+  const possibleMissingFields = [
+    "Customer Name",
+    "Customer Phone",
+    "Pickup Location",
+    "Pickup Address",
+    "Delivery Location", 
+    "Delivery Address",
+    "Cargo Type",
+    "Weight",
+    "Truck Type",
+    "Pickup Time",
+    "Delivery Time",
+    "Deadline",
+    "Additional Notes"
+  ];
+
+  const toggleMissingField = (field: string) => {
+    setSelectedMissingFields(prev => 
+      prev.includes(field) 
+        ? prev.filter(f => f !== field)
+        : [...prev, field]
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -254,6 +330,7 @@ export function LoadDashboardWithAssignments() {
                   <TableHead>Route</TableHead>
                   <TableHead>Cargo</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Validation</TableHead>
                   <TableHead>Assignment</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -299,6 +376,30 @@ export function LoadDashboardWithAssignments() {
                         <Badge variant="outline" className={getStatusColor(load.status)}>
                           {load.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {load.validationStatus === 'missing_details' ? (
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              Missing Details
+                            </Badge>
+                          </div>
+                        ) : load.validationStatus === 'requires_review' ? (
+                          <div className="flex items-center gap-2">
+                            <Flag className="w-4 h-4 text-red-500" />
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                              Flagged
+                            </Badge>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Complete
+                            </Badge>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {assignment ? (
@@ -351,6 +452,17 @@ export function LoadDashboardWithAssignments() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
+                          {load.validationStatus !== 'requires_review' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openFlagDialog(load)}
+                              className="text-amber-600 hover:text-amber-800"
+                              title="Flag for missing details"
+                            >
+                              <Flag className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -599,6 +711,82 @@ export function LoadDashboardWithAssignments() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Flag Load Dialog */}
+      <Dialog open={isFlagDialogOpen} onOpenChange={setIsFlagDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Flag Load for Missing Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedLoad && (
+            <div className="space-y-6">
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  <h4 className="font-medium text-amber-800">Load: {selectedLoad.loadId}</h4>
+                </div>
+                <p className="text-sm text-amber-700">
+                  Flag this load request if the AI extraction missed important details or if manual review is needed.
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium">Missing Fields</Label>
+                <p className="text-sm text-gray-600 mb-3">Select all fields that are missing or need clarification:</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {possibleMissingFields.map((field) => (
+                    <div key={field} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={field}
+                        checked={selectedMissingFields.includes(field)}
+                        onCheckedChange={() => toggleMissingField(field)}
+                      />
+                      <Label htmlFor={field} className="text-sm cursor-pointer">
+                        {field}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="flag-notes" className="text-base font-medium">
+                  Validation Notes <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-sm text-gray-600 mb-2">
+                  Explain what's missing or what needs to be clarified with the customer:
+                </p>
+                <Textarea
+                  id="flag-notes"
+                  value={flagNotes}
+                  onChange={(e) => setFlagNotes(e.target.value)}
+                  placeholder="e.g., Need exact pickup address, weight unclear, delivery time not specified..."
+                  rows={4}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsFlagDialogOpen(false)}
+                  disabled={flagLoadMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleFlagSubmit}
+                  disabled={flagLoadMutation.isPending || selectedMissingFields.length === 0 || !flagNotes.trim()}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
+                  {flagLoadMutation.isPending ? "Flagging..." : "Flag Load Request"}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

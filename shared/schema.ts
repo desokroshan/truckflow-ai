@@ -31,9 +31,15 @@ export const loadRequests = pgTable("load_requests", {
   deliveryTime: text("delivery_time"),
   deadline: text("deadline"),
   additionalNotes: text("additional_notes"),
-  status: text("status").notNull().default("pending"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected, missing_details
   transcription: text("transcription"),
   extractedData: text("extracted_data"),
+  validationStatus: text("validation_status").default("pending"), // complete, missing_details, requires_review
+  missingFields: text("missing_fields"), // JSON array of missing field names
+  validationNotes: text("validation_notes"), // Human notes about missing or unclear information
+  flaggedForReview: boolean("flagged_for_review").default(false),
+  flaggedBy: integer("flagged_by").references(() => users.id),
+  flaggedAt: timestamp("flagged_at"),
   createdAt: timestamp("created_at").defaultNow(),
   approvedAt: timestamp("approved_at"),
   notificationSent: boolean("notification_sent").default(false),
@@ -123,6 +129,52 @@ export const signupSchema = z.object({
   phoneNumber: z.string().optional(),
 });
 
+// Load request validation schemas
+export const insertLoadRequestSchema = createInsertSchema(loadRequests).omit({
+  id: true,
+  createdAt: true,
+  approvedAt: true,
+  flaggedAt: true,
+});
+
+// Load validation schema for checking completeness
+export const loadValidationSchema = z.object({
+  customerName: z.string().min(1, "Customer name is required"),
+  customerPhone: z.string().min(10, "Valid phone number is required"),
+  pickupLocation: z.string().min(1, "Pickup location is required"),
+  pickupAddress: z.string().min(1, "Pickup address is required"),
+  deliveryLocation: z.string().min(1, "Delivery location is required"),
+  deliveryAddress: z.string().min(1, "Delivery address is required"),
+  cargoType: z.string().min(1, "Cargo type is required"),
+  weight: z.string().min(1, "Weight is required"),
+  truckType: z.string().min(1, "Truck type is required"),
+  pickupTime: z.string().optional(),
+  deliveryTime: z.string().optional(),
+  deadline: z.string().optional(),
+  additionalNotes: z.string().optional(),
+});
+
+// Flag load request schema
+export const flagLoadRequestSchema = z.object({
+  missingFields: z.array(z.string()),
+  validationNotes: z.string().min(1, "Please provide notes about missing details"),
+  validationStatus: z.enum(["missing_details", "requires_review"]),
+});
+
+// Types
+export type User = typeof users.$inferSelect;
+export type LoadRequest = typeof loadRequests.$inferSelect;
+export type CallLog = typeof callLogs.$inferSelect;
+export type Driver = typeof drivers.$inferSelect;
+export type Truck = typeof trucks.$inferSelect;
+export type Assignment = typeof assignments.$inferSelect;
+export type Document = typeof documents.$inferSelect;
+export type Settings = typeof settings.$inferSelect;
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertLoadRequest = z.infer<typeof insertLoadRequestSchema>;
+export type FlagLoadRequest = z.infer<typeof flagLoadRequestSchema>;
+
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   uploadedAt: true,
@@ -131,12 +183,6 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 export const insertSettingsSchema = createInsertSchema(settings).omit({
   id: true,
   updatedAt: true,
-});
-
-export const insertLoadRequestSchema = createInsertSchema(loadRequests).omit({
-  id: true,
-  createdAt: true,
-  approvedAt: true,
 });
 
 export const insertCallLogSchema = createInsertSchema(callLogs).omit({
@@ -159,21 +205,11 @@ export const insertAssignmentSchema = createInsertSchema(assignments).omit({
   assignedAt: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
 export type SignupData = z.infer<typeof signupSchema>;
-export type LoadRequest = typeof loadRequests.$inferSelect;
-export type InsertLoadRequest = z.infer<typeof insertLoadRequestSchema>;
-export type CallLog = typeof callLogs.$inferSelect;
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
-export type Driver = typeof drivers.$inferSelect;
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
-export type Truck = typeof trucks.$inferSelect;
 export type InsertTruck = z.infer<typeof insertTruckSchema>;
-export type Assignment = typeof assignments.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
-export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
-export type Settings = typeof settings.$inferSelect;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;

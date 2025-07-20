@@ -154,6 +154,56 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async flagLoadRequestForReview(
+    id: number, 
+    missingFields: string[], 
+    validationNotes: string, 
+    validationStatus: string,
+    flaggedBy: number
+  ): Promise<LoadRequest | undefined> {
+    const loadRequest = this.loadRequests.get(id);
+    if (!loadRequest) return undefined;
+
+    const updated: LoadRequest = {
+      ...loadRequest,
+      validationStatus,
+      missingFields: JSON.stringify(missingFields),
+      validationNotes,
+      flaggedForReview: true,
+      flaggedBy,
+      flaggedAt: new Date(),
+      status: validationStatus === "missing_details" ? "missing_details" : loadRequest.status,
+    };
+    this.loadRequests.set(id, updated);
+    return updated;
+  }
+
+  async updateLoadRequestValidation(
+    id: number,
+    validationStatus: string,
+    missingFields?: string[],
+    validationNotes?: string
+  ): Promise<LoadRequest | undefined> {
+    const loadRequest = this.loadRequests.get(id);
+    if (!loadRequest) return undefined;
+
+    const updated: LoadRequest = {
+      ...loadRequest,
+      validationStatus,
+      missingFields: missingFields ? JSON.stringify(missingFields) : loadRequest.missingFields,
+      validationNotes: validationNotes || loadRequest.validationNotes,
+      flaggedForReview: validationStatus !== "complete",
+    };
+    this.loadRequests.set(id, updated);
+    return updated;
+  }
+
+  async getLoadRequestsNeedingReview(): Promise<LoadRequest[]> {
+    return Array.from(this.loadRequests.values())
+      .filter(request => request.flaggedForReview || request.validationStatus === "missing_details")
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  }
+
   async getCallLog(id: number): Promise<CallLog | undefined> {
     return this.callLogs.get(id);
   }
