@@ -31,6 +31,8 @@ interface LoadRequest {
   validationNotes?: string;
   flaggedForReview?: boolean;
   flaggedAt?: string;
+  pickupAddress?: string;
+  deliveryAddress?: string;
 }
 
 interface Driver {
@@ -376,28 +378,35 @@ export function LoadDashboardWithAssignments() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {load.validationStatus === 'missing_details' ? (
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-amber-500" />
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                              Missing Details
-                            </Badge>
-                          </div>
-                        ) : load.validationStatus === 'requires_review' ? (
-                          <div className="flex items-center gap-2">
-                            <Flag className="w-4 h-4 text-red-500" />
-                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                              Flagged
-                            </Badge>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Complete
-                            </Badge>
-                          </div>
-                        )}
+                        <div className="space-y-1">
+                          {load.validationStatus === 'missing_details' ? (
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-amber-500" />
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                Missing Details
+                              </Badge>
+                            </div>
+                          ) : load.validationStatus === 'requires_review' ? (
+                            <div className="flex items-center gap-2">
+                              <Flag className="w-4 h-4 text-red-500" />
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                Flagged
+                              </Badge>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                Complete
+                              </Badge>
+                            </div>
+                          )}
+                          {load.validationNotes && (
+                            <p className="text-xs text-gray-500 max-w-xs truncate" title={load.validationNotes}>
+                              {load.validationNotes}
+                            </p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {assignment ? (

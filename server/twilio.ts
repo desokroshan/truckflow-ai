@@ -4,6 +4,7 @@ import { transcribeAudio, extractLoadInfo, generateLoadSummary } from './openai'
 import { sendOwnerNotification, sendOwnerSMS } from './email';
 import { saveLoadToGoogleSheets } from './googleSheets';
 import { autoValidateLoadRequest, getValidationSummary } from './validation';
+import { validateLoadRequestWithAddresses } from './addressValidation';
 import { nanoid } from 'nanoid';
 
 let client: ReturnType<typeof twilio>;
@@ -265,15 +266,41 @@ export async function processRecordingWebhook(
       notificationSent: false,
     });
 
-    // Auto-validate the load request
+    // Auto-validate the load request (including address validation)
     const validation = autoValidateLoadRequest(loadRequest);
-    if (validation.autoFlag) {
-      console.log(`Auto-flagging load ${loadId} for missing details: ${validation.missingFields.join(', ')}`);
+    const enhancedValidation = await validateLoadRequestWithAddresses(loadRequest);
+    
+    let validationNotes = '';
+    let shouldFlag = validation.autoFlag;
+    let validationStatus = validation.validationStatus;
+    
+    // Combine field validation and address validation results
+    if (!enhancedValidation.overallValid) {
+      shouldFlag = true;
+      validationStatus = 'missing_details';
+      
+      const issues = [
+        ...enhancedValidation.criticalIssues,
+        ...enhancedValidation.recommendations
+      ];
+      
+      validationNotes = `Auto-validation failed: ${issues.join('; ')}`;
+      
+      console.log(`Auto-flagging load ${loadId} for validation issues:`, {
+        fieldIssues: validation.missingFields,
+        addressIssues: enhancedValidation.criticalIssues,
+        recommendations: enhancedValidation.recommendations
+      });
+    } else if (validation.autoFlag) {
+      validationNotes = `Auto-flagged: Missing ${validation.missingFields.length} required fields. AI extraction may have been incomplete.`;
+    }
+    
+    if (shouldFlag) {
       await storage.updateLoadRequestValidation(
         loadRequest.id,
-        validation.validationStatus,
+        validationStatus,
         validation.missingFields,
-        `Auto-flagged: Missing ${validation.missingFields.length} required fields. AI extraction may have been incomplete.`
+        validationNotes
       );
     }
 

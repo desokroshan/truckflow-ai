@@ -8,6 +8,7 @@ import { Express } from "express";
 import { saveLoadToGoogleSheets, initializeGoogleSheet, updateLoadStatusInGoogleSheets } from "./googleSheets";
 import { processIncomingEmail } from "./email";
 import { validateLoadRequest, getValidationSummary, autoValidateLoadRequest, categorizeLoadRequests } from "./validation";
+import { validateLoadRequestWithAddresses, validateAddressWithGoogle } from './addressValidation';
 import { createTwiMLResponse, createSMSTwiMLResponse, handleIncomingCall, processRecordingWebhook, processSMSWebhook } from "./twilio";
 import { assignmentEngine } from "./assignment";
 import multer from "multer";
@@ -566,7 +567,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
-  // Validate load request completeness
+  // Validate load request completeness (enhanced with address validation)
   app.get("/api/load-requests/:id/validate", authenticateToken, async (req: any, res: express.Response) => {
     try {
       const { id } = req.params;
@@ -576,17 +577,37 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         return res.status(404).json({ error: "Load request not found" });
       }
 
-      const validation = validateLoadRequest(loadRequest);
+      const basicValidation = validateLoadRequest(loadRequest);
       const summary = getValidationSummary(loadRequest);
+      const enhancedValidation = await validateLoadRequestWithAddresses(loadRequest);
 
       res.json({
         loadRequest,
-        validation,
+        validation: basicValidation,
+        addressValidation: enhancedValidation.addressValidation,
+        enhancedValidation,
         summary
       });
     } catch (error) {
       console.error("Error validating load request:", error);
       res.status(500).json({ error: "Failed to validate load request" });
+    }
+  });
+
+  // Validate a single address
+  app.post("/api/validate-address", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      const { address } = req.body;
+      
+      if (!address || typeof address !== 'string') {
+        return res.status(400).json({ error: "Address is required" });
+      }
+
+      const validation = await validateAddressWithGoogle(address);
+      res.json(validation);
+    } catch (error) {
+      console.error("Error validating address:", error);
+      res.status(500).json({ error: "Failed to validate address" });
     }
   });
 

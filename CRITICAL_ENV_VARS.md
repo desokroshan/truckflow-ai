@@ -67,6 +67,14 @@ GOOGLE_CLIENT_EMAIL="service@project.iam.gserviceaccount.com"
 **How to Get**: Create Google Cloud Project + Service Account
 **Cost**: Free
 
+### Address Validation
+```bash
+GOOGLE_MAPS_API_KEY="your-google-maps-api-key-here"
+```
+**Why Recommended**: Validates pickup/delivery addresses for accuracy
+**How to Get**: Enable Google Maps Address Validation API in Google Cloud Console
+**Cost**: $5.00 per 1,000 requests (typical usage: $5-15/month)
+
 ---
 
 ## 🚀 Quick Setup Priority Order
@@ -109,4 +117,4 @@ curl -X POST "http://localhost:5000/api/test-email"
 - **Email**: $0 (use existing)
 - **Hosting**: $10-30 (depends on provider)
 
-**Total**: $25-120/month for small-medium usage
+**Total**: $30-140/month for small-medium usage (including address validation)
