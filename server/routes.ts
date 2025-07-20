@@ -586,7 +586,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
 
       // Get custom greeting message - optimized for faster response
       const greetingSetting = await storage.getSetting("greeting_message");
-      const greetingMessage = greetingSetting?.value || "Thank you for calling Expedite Transport. I'm your AI assistant. Please describe your shipping needs - pickup location, delivery location, and cargo details. When finished, press pound or wait 3 seconds. This call is recorded.";
+      const greetingMessage = greetingSetting?.value || "Thank you for calling Expedite Transport. I'm Freya and I'll help you with your shipping request. Please describe your shipping needs - pickup location, delivery location, and cargo details. When finished, press pound or wait 2 seconds. This call is recorded.";
 
       // Create TwiML response to handle the call
       const twiml = createTwiMLResponse();
