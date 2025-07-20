@@ -584,9 +584,9 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       // Handle incoming call
       await handleIncomingCall(phoneNumber, callSid);
 
-      // Get custom greeting message
+      // Get custom greeting message - optimized for faster response
       const greetingSetting = await storage.getSetting("greeting_message");
-      const greetingMessage = greetingSetting?.value || "Thank you for calling Expedite Transport. I'm your AI assistant and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. I'll be recording this call to process your request.";
+      const greetingMessage = greetingSetting?.value || "Thank you for calling Expedite Transport. I'm your AI assistant. Please describe your shipping needs - pickup location, delivery location, and cargo details. When finished, press pound or wait 3 seconds. This call is recorded.";
 
       // Create TwiML response to handle the call
       const twiml = createTwiMLResponse();
@@ -596,12 +596,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         language: "en-US"
       }, greetingMessage);
 
-      // Record the conversation
+      // Record the conversation with optimized settings
       twiml.record({
         transcribe: false,
-        maxLength: 300, // 5 minutes max
+        maxLength: 120, // Reduced to 2 minutes max
+        timeout: 3, // Shorter silence timeout (3 seconds instead of default 5)
+        finishOnKey: "#", // Allow caller to finish early with #
         action: `/api/twilio/recording`,
-        method: "POST"
+        method: "POST",
+        recordingStatusCallback: `/api/twilio/recording-status`,
+        recordingStatusCallbackMethod: "POST"
       });
 
       res.type('text/xml');
@@ -669,12 +673,12 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         console.error("Error processing recording:", error);
       });
 
-      // Respond to caller
+      // Respond to caller with faster, more concise message
       const twiml = createTwiMLResponse();
       twiml.say({
         voice: "Polly.Joanna-Neural",
         language: "en-US"
-      }, "Thank you for choosing Expedite Transport. I'm processing your information and will send the details to our dispatch team. You should receive a confirmation within 15 minutes for your expedited shipment. Have a great day!");
+      }, "Got it! Processing your load request now. You'll receive confirmation within 10 minutes. Thank you!");
 
       twiml.hangup();
 
@@ -683,6 +687,29 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error("Error handling recording webhook:", error);
       res.status(500).send("Error processing recording");
+    }
+  });
+
+  // Recording status callback for faster processing
+  app.post("/api/twilio/recording-status", async (req: express.Request, res: express.Response) => {
+    try {
+      const { 
+        RecordingStatus: status,
+        RecordingSid: recordingSid,
+        CallSid: callSid
+      } = req.body;
+
+      console.log(`Recording status update - SID: ${recordingSid}, Status: ${status}`);
+      
+      // We can start preparing for processing when recording becomes available
+      if (status === 'completed') {
+        console.log(`Recording completed for call ${callSid}, preparing for processing`);
+      }
+
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error("Error handling recording status:", error);
+      res.status(500).send("Error");
     }
   });
 

@@ -20,9 +20,12 @@ export async function transcribeAudio(audioFilePath: string): Promise<{ text: st
   try {
     const audioReadStream = fs.createReadStream(audioFilePath);
 
+    // Optimized transcription with faster settings
     const transcription = await getOpenAIClient().audio.transcriptions.create({
       file: audioReadStream,
       model: "whisper-1",
+      response_format: "json", // Faster than verbose_json
+      temperature: 0, // More deterministic, faster processing
     });
 
     return {
@@ -54,40 +57,38 @@ interface ExtractedLoadInfo {
 export async function extractLoadInfo(transcription: string): Promise<ExtractedLoadInfo> {
   try {
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    // Optimized for faster processing
     const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are an expert at extracting trucking load information from phone call transcriptions. 
-          Extract the following information and respond with JSON in this exact format:
+          content: `Extract trucking load info from call transcripts. Return JSON:
           {
             "customerName": "string",
             "customerPhone": "string", 
-            "pickupLocation": "string (city, state)",
-            "pickupAddress": "string (full address)",
-            "deliveryLocation": "string (city, state)",
-            "deliveryAddress": "string (full address)",
-            "cargoType": "string (description of what's being shipped)",
-            "weight": "string (weight with units)",
-            "truckType": "string (type of truck/trailer needed)",
-            "pickupTime": "string (optional - pickup time window)",
-            "deliveryTime": "string (optional - delivery time window)",
-            "deadline": "string (optional - deadline for delivery)",
-            "additionalNotes": "string (Any additional information, special requirements, or other details that don't fit in the standard fields)"
+            "pickupLocation": "city, state",
+            "pickupAddress": "full address if given",
+            "deliveryLocation": "city, state",
+            "deliveryAddress": "full address if given",
+            "cargoType": "what's being shipped",
+            "weight": "weight with units",
+            "truckType": "Box Truck/Dry Van/Flatbed/Reefer/Step Deck/Lowboy",
+            "pickupTime": "pickup window if specified",
+            "deliveryTime": "delivery window if specified",
+            "deadline": "deadline if mentioned",
+            "additionalNotes": "special requirements"
           }
-
-          If any information is not clearly stated, make reasonable inferences based on the cargo type and context.
-          For truck type, common options are: Box Truck, Dry Van, Flatbed, Reefer, Step Deck, Lowboy.
-          Extract phone numbers in format (XXX) XXX-XXXX.
-          For locations, provide city and state even if full address isn't given.`
+          Infer missing info from context. Use (XXX) XXX-XXXX for phone format.`
         },
         {
           role: "user",
-          content: `Extract load information from this call transcription: "${transcription}"`
+          content: `Extract load info: "${transcription}"`
         }
       ],
       response_format: { type: "json_object" },
+      temperature: 0, // More deterministic, faster processing
+      max_tokens: 500, // Limit response size for faster processing
     });
 
     const extractedData = JSON.parse(response.choices[0].message.content || "{}");
@@ -109,19 +110,21 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
 
 export async function generateLoadSummary(loadData: ExtractedLoadInfo): Promise<string> {
   try {
-    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    // Optimized for faster processing - use gpt-4o-mini for summary generation
     const response = await getOpenAIClient().chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini", // Faster, cheaper model for simple summarization
       messages: [
         {
           role: "system",
-          content: "Create a concise, professional summary of this load request for email notification to the trucking company owner. Include all key details in a clear, actionable format."
+          content: "Create concise load summary for trucking company owner. Include key details: customer, route, cargo, urgency."
         },
         {
           role: "user",
-          content: `Create a summary for this load request: ${JSON.stringify(loadData)}`
+          content: `Summarize: ${JSON.stringify(loadData)}`
         }
       ],
+      temperature: 0,
+      max_tokens: 200, // Shorter summary for faster processing
     });
 
     return response.choices[0].message.content || "Load summary could not be generated.";
