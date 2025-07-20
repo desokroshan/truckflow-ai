@@ -8,7 +8,7 @@ import { Express } from "express";
 import { saveLoadToGoogleSheets, initializeGoogleSheet, updateLoadStatusInGoogleSheets } from "./googleSheets";
 import { processIncomingEmail } from "./email";
 import { validateLoadRequest, getValidationSummary, autoValidateLoadRequest, categorizeLoadRequests } from "./validation";
-import { validateLoadRequestWithAddresses, validateAddressWithGoogle } from './addressValidation';
+import { validateLoadRequestWithAddresses, validateAddress } from './addressValidation';
 import { createTwiMLResponse, createSMSTwiMLResponse, handleIncomingCall, processRecordingWebhook, processSMSWebhook } from "./twilio";
 import { assignmentEngine } from "./assignment";
 import multer from "multer";
@@ -603,7 +603,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         return res.status(400).json({ error: "Address is required" });
       }
 
-      const validation = await validateAddressWithGoogle(address);
+      const validation = await validateAddress(address);
       res.json(validation);
     } catch (error) {
       console.error("Error validating address:", error);

@@ -4,7 +4,7 @@ import { transcribeAudio, extractLoadInfo, generateLoadSummary } from './openai'
 import { sendOwnerNotification, sendOwnerSMS } from './email';
 import { saveLoadToGoogleSheets } from './googleSheets';
 import { autoValidateLoadRequest, getValidationSummary } from './validation';
-import { validateLoadRequestWithAddresses } from './addressValidation';
+import { validateLoadRequestWithAddresses, validateAddress } from './addressValidation';
 import { nanoid } from 'nanoid';
 
 let client: ReturnType<typeof twilio>;

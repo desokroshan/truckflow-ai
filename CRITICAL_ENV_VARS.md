@@ -67,13 +67,23 @@ GOOGLE_CLIENT_EMAIL="service@project.iam.gserviceaccount.com"
 **How to Get**: Create Google Cloud Project + Service Account
 **Cost**: Free
 
-### Address Validation
+### Address Validation (Multiple FREE Options)
 ```bash
+# Option 1: USPS API (Completely Free - Recommended)
+USPS_USER_ID="your-usps-user-id-here"
+
+# Option 2: Radar API (100K requests/month free - Backup)  
+RADAR_API_KEY="your-radar-api-key-here"
+
+# Option 3: Google Maps API (Optional - $200 monthly credit)
 GOOGLE_MAPS_API_KEY="your-google-maps-api-key-here"
 ```
 **Why Recommended**: Validates pickup/delivery addresses for accuracy
-**How to Get**: Enable Google Maps Address Validation API in Google Cloud Console
-**Cost**: $5.00 per 1,000 requests (typical usage: $5-15/month)
+**How to Get**: 
+- USPS: Register at usps.com/business/web-tools-apis/ (FREE)
+- Radar: Sign up at radar.com (100K requests/month FREE)
+- Google: Enable API in Google Cloud Console ($200 credit available)
+**Cost**: FREE with USPS or Radar APIs!
 
 ---
 
@@ -117,4 +127,4 @@ curl -X POST "http://localhost:5000/api/test-email"
 - **Email**: $0 (use existing)
 - **Hosting**: $10-30 (depends on provider)
 
-**Total**: $30-140/month for small-medium usage (including address validation)
+**Total**: $25-120/month for small-medium usage (address validation now FREE!)
