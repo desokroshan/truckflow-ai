@@ -447,16 +447,19 @@ export async function validateLoadRequestWithAddresses(loadRequest: LoadRequest)
   }
   
   if (!addressValidation.overallValid) {
+    console.log('[VAL] Address validation failed');
     criticalIssues.push('Address validation failed');
     recommendations.push(...addressValidation.recommendedActions);
   }
   
   // Add address-specific issues to recommendations
   if (addressValidation.pickupAddress.issues.length > 0) {
+    console.log('[VAL] Pickup address issues: ', addressValidation.pickupAddress.issues);
     recommendations.push(`Pickup address issues: ${addressValidation.pickupAddress.issues.join(', ')}`);
   }
   
   if (addressValidation.deliveryAddress.issues.length > 0) {
+    console.log('[VAL] Delivery address issues: ', addressValidation.deliveryAddress.issues);
     recommendations.push(`Delivery address issues: ${addressValidation.deliveryAddress.issues.join(', ')}`);
   }
   

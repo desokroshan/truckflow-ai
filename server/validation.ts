@@ -50,8 +50,10 @@ export function validateLoadRequest(loadRequest: LoadRequest): ValidationResult 
     (loadRequest.pickupLocation && loadRequest.pickupLocation.trim() !== '' && loadRequest.pickupLocation !== 'null');
   
   if (!hasPickupAddress) {
+    console.log('[VAL] Pickup address is missing');
     missingFields.push('pickupAddress');
   } else {
+    console.log('[VAL] Pickup address is valid');
     completedFieldsCount++;
   }
 
@@ -61,8 +63,10 @@ export function validateLoadRequest(loadRequest: LoadRequest): ValidationResult 
     (loadRequest.deliveryLocation && loadRequest.deliveryLocation.trim() !== '' && loadRequest.deliveryLocation !== 'null');
   
   if (!hasDeliveryAddress) {
+    console.log('[VAL] Delivery address is missing');
     missingFields.push('deliveryAddress');
   } else {
+    console.log('[VAL] Delivery address is valid');
     completedFieldsCount++;
   }
 
@@ -73,8 +77,10 @@ export function validateLoadRequest(loadRequest: LoadRequest): ValidationResult 
     loadRequest.cargoType !== 'undefined';
   
   if (!hasCargoDetails) {
+    console.log('[VAL] Cargo details are missing');
     missingFields.push('cargoType');
   } else {
+    console.log('[VAL] Cargo details are valid');
     completedFieldsCount++;
   }
 

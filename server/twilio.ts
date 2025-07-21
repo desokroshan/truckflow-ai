@@ -267,6 +267,7 @@ export async function processRecordingWebhook(
     });
 
     // Auto-validate the load request (including address validation)
+    console.log(`Auto-validating load ${loadId}...`);
     const validation = autoValidateLoadRequest(loadRequest);
     const enhancedValidation = await validateLoadRequestWithAddresses(loadRequest);
     
