@@ -28,3 +28,9 @@ echo "🌐 Access at: http://$(curl -s ifconfig.me):5000"
 
 # Show status
 pm2 status
+
+echo ""
+echo "📋 Quick commands:"
+echo "  Check logs: pm2 logs truckflow"
+echo "  Restart:    pm2 restart truckflow"
+echo "  Stop:       pm2 stop truckflow"
