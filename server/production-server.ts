@@ -1,11 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { log } from "./vite";
 import * as dotenv from 'dotenv';
 import { initializeTwilio } from './twilio';
 import { initializeEmailClient } from './email';
 import { initializeOpenAI } from './openai';
 import { initializeGoogleSheetsClient } from './googleSheets';
+import path from 'path';
+import fs from 'fs';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -84,7 +86,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(`[${new Date().toLocaleTimeString()}] [express] ${logLine}`);
     }
   });
 
@@ -92,10 +94,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  console.log("Registering routes")
+  console.log("Registering routes");
   const server = await registerRoutes(app);
-  console.log("Server registered successfully")
+  console.log("Server registered successfully");
 
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -104,26 +107,50 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "development") {
-    const { setupVite } = await import("./vite.js");
-    await setupVite(app, server);
+  // Serve static files in production
+  const distPath = path.resolve(process.cwd(), "dist", "public");
+  if (fs.existsSync(distPath)) {
+    console.log(`Serving static files from: ${distPath}`);
+    app.use(express.static(distPath));
+    
+    // Fall through to index.html for client-side routing
+    app.use("*", (req, res) => {
+      if (req.path.startsWith("/api") || req.path.startsWith("/twilio")) {
+        res.status(404).json({ error: "Endpoint not found" });
+      } else {
+        res.sendFile(path.resolve(distPath, "index.html"));
+      }
+    });
   } else {
-    const { serveStatic } = await import("./vite.js");
-    serveStatic(app);
+    console.log(`Build directory not found at: ${distPath}`);
+    app.get("*", (req, res) => {
+      if (req.path.startsWith("/api") || req.path.startsWith("/twilio")) {
+        res.status(404).json({ error: "Endpoint not found" });
+      } else {
+        res.status(200).send(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>TruckFlow</title></head>
+            <body>
+              <div id="root">
+                <h1>TruckFlow Production Server</h1>
+                <p>Build directory not found. Please run 'npm run build' first.</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    });
   }
-  console.log("vite setup done")
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  console.log("Production server setup complete");
+
+  // Start server
   const port = 5000;
   server.listen({
     port,
     host: "0.0.0.0",
   }, () => {
-    log(`serving on port ${port}`);
+    console.log(`[${new Date().toLocaleTimeString()}] [express] TruckFlow production server running on port ${port}`);
   });
 })();
