@@ -1,0 +1,37 @@
+service: truckflow
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  timeout: 30
+  environment:
+    NODE_ENV: production
+    # Add your environment variables here:
+    # DATABASE_URL: ${env:DATABASE_URL}
+    # OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    # TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID}
+    # TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN}
+    # USPS_USER_ID: ${env:USPS_USER_ID}
+    # JWT_SECRET: ${env:JWT_SECRET}
+    # SESSION_SECRET: ${env:SESSION_SECRET}
+
+functions:
+  app:
+    handler: dist/lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 5000
