@@ -99,10 +99,11 @@ Changelog:
 - July 18, 2025. Completed deployment readiness assessment and created comprehensive deployment checklist
 - July 18, 2025. Optimized voice assistant response times - 40% faster processing, improved caller experience
 - July 22, 2025. Created versioned EC2 deployment packages with dependency resolution fixes
+- July 26, 2025. Added created date column to all load request dashboard tables and Google Sheets integration
 
 ## Deployment Versions
-- **Latest:** v1.2.0 - Fixed module dependencies, enhanced deployment automation
-- **Previous:** v1.1.0, v1.0.0 - Initial production packages
+- **Latest:** v1.4.0 - Added created date tracking across all dashboards, cleaned up build warnings
+- **Previous:** v1.3.0 - Environment template, v1.2.0 - Dependency fixes, v1.1.0, v1.0.0 - Initial packages
 
 ## User Preferences
 

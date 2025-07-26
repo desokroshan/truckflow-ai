@@ -180,6 +180,7 @@ export default function LoadDashboard() {
                   <TableHead>Customer</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Equipment</TableHead>
+                  <TableHead>Created Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -215,6 +216,11 @@ export default function LoadDashboard() {
                       >
                         {load.truckType}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {load.createdAt ? new Date(load.createdAt).toLocaleDateString() : 'N/A'}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge 

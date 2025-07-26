@@ -329,6 +329,7 @@ export function LoadDashboardWithAssignments() {
                   <TableHead>Customer</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Cargo</TableHead>
+                  <TableHead>Created Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Validation</TableHead>
                   <TableHead>Assignment</TableHead>
@@ -370,6 +371,11 @@ export function LoadDashboardWithAssignments() {
                             <Weight className="w-4 h-4 mr-1 text-gray-400" />
                             <span className="text-xs text-gray-500">{load.weight}</span>
                           </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {load.createdAt ? new Date(load.createdAt).toLocaleDateString() : 'N/A'}
                         </div>
                       </TableCell>
                       <TableCell>
