@@ -15,9 +15,12 @@ if [ ! -f "dist/production-server.js" ]; then
     exit 1
 fi
 
-# Start production server
-echo "Starting TruckFlow server..."
-NODE_ENV=production pm2 start dist/production-server.js --name truckflow
+# Create logs directory
+mkdir -p logs
+
+# Start production server with ecosystem file
+echo "Starting TruckFlow server with ecosystem configuration..."
+pm2 start ecosystem.config.js
 
 # Save PM2 configuration
 pm2 startup
