@@ -177,6 +177,60 @@ export async function processSMSWebhook(
   }
 }
 
+// Retry mechanism with exponential backoff
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000,
+  maxDelay: number = 10000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+      console.log(`Attempt ${attempt + 1} failed, retrying in ${delay}ms: ${lastError.message}`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+}
+
+async function downloadRecordingWithRetry(recordingSid: string): Promise<{ audioUrl: string; phoneNumber: string }> {
+  return await retryWithBackoff(async () => {
+    // Download the recording metadata
+    const recordingData = await getTwilioClient().recordings(recordingSid).fetch();
+    const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.wav')}`;
+    
+    // Get the phone number from the call
+    const callData = await getTwilioClient().calls(recordingData.callSid).fetch();
+    const phoneNumber = callData.from;
+    
+    // Test if the recording is actually downloadable
+    const response = await fetch(audioUrl, {
+      method: 'HEAD', // Use HEAD to just check availability
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Recording not yet available: ${response.status} ${response.statusText}`);
+    }
+    
+    return { audioUrl, phoneNumber };
+  }, 5, 2000, 15000); // 5 retries, starting at 2s, max 15s delay
+}
+
 export async function processRecordingWebhook(
   recordingUrl: string,
   recordingSid: string,
@@ -186,16 +240,9 @@ export async function processRecordingWebhook(
   try {
     console.log(`Processing recording from twilio: ${recordingSid} for call: ${callSid}`);
     
-    // Download the recording
-    const recordingData = await getTwilioClient().recordings(recordingSid).fetch();
-    //console.log(`Recording data is: ${JSON.stringify(recordingData, null, 2)}`);
-    const audioUrl = `https://api.twilio.com${recordingData.uri.replace('.json', '.wav')}`;
-    //console.log(`Recording URL: ${audioUrl}`);
-    
-    // Get the phone number from the call
-    const callData = await getTwilioClient().calls(callSid).fetch();
-    const phoneNumber = callData.from;
-    //console.log(`Phone number: ${phoneNumber}`);
+    // Download the recording with retry mechanism
+    const { audioUrl, phoneNumber } = await downloadRecordingWithRetry(recordingSid);
+    console.log(`Recording available, downloading from: ${audioUrl}`);
     
     const response = await fetch(audioUrl, {
       method: 'GET',
@@ -206,8 +253,7 @@ export async function processRecordingWebhook(
     });
     
     if (!response.ok) {
-      console.log(`Failed to download recording: ${response.statusText}`);
-      throw new Error(`Failed to download recording: ${response.statusText}`);
+      throw new Error(`Failed to download recording: ${response.status} ${response.statusText}`);
     }
     
     const audioBuffer = await response.arrayBuffer();
