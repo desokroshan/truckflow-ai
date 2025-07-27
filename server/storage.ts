@@ -349,17 +349,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  // User methods
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = {
-      ...insertUser,
-      id,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
-    return user;
-  }
+
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.email === email);
@@ -626,6 +616,34 @@ export class MemStorage implements IStorage {
       currentLocation: "Yard"
     });
 
+    // Create a sample load request with real phone number
+    this.createLoadRequest({
+      loadId: "EXT-2025-DEMO",
+      customerName: "Roshan",
+      customerPhone: "+1-206-555-0123",
+      pickupLocation: "Seattle, WA",
+      pickupAddress: "123 Pine St, Seattle, WA 98101",
+      deliveryLocation: "Sammamish, WA",
+      deliveryAddress: "456 Issaquah Pine Lake Rd, Sammamish, WA 98027",
+      cargoType: "Electronics",
+      weight: "500 pounds",
+      truckType: "Dry Van",
+      pickupTime: "2025-07-28 09:00",
+      deliveryTime: "2025-07-28 15:00",
+      deadline: "2025-07-28 17:00",
+      status: "pending",
+      transcription: "Hi this is Roshan calling from Seattle. I need to ship some electronics equipment from our location here in Seattle to our warehouse in Sammamish. The shipment includes five forklifts, two scissor lifts, and a bunch of dollies, weighing about 500 pounds total. Can you help me with this?",
+      extractedData: JSON.stringify({
+        customerName: "Roshan",
+        customerPhone: "+1-206-555-0123",
+        pickupLocation: "Seattle, WA",
+        deliveryLocation: "Sammamish, WA",
+        cargoType: "Electronics",
+        weight: "500 pounds"
+      }),
+      notificationSent: false,
+    });
+
     // Initialize default settings synchronously
     this.initializeDefaultSettings();
   }
@@ -692,15 +710,7 @@ export class MemStorage implements IStorage {
 
 
 
-  async getDocumentsByLoadRequest(loadRequestId: number): Promise<Document[]> {
-    return Array.from(this.documents.values()).filter(
-      document => document.loadRequestId === loadRequestId
-    );
-  }
 
-  async getAllDocuments(): Promise<Document[]> {
-    return Array.from(this.documents.values());
-  }
 }
 
 export const storage = new MemStorage();

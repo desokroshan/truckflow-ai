@@ -1,6 +1,12 @@
-# ✅ Created Date Column Added Successfully
+# ✅ Phone Number Display Fixed + Created Date Update
 
-## What Was Added
+## Issues Fixed
+
+### Phone Number Display Bug
+- **Problem**: Customer phone numbers showed as masked `(XXX) XXX-XXXX` format
+- **Root Cause**: OpenAI extraction prompt was instructing to mask phone numbers
+- **Fix**: Updated prompt to extract actual phone numbers from call transcripts
+- **Sample Data**: Added proper sample load request with real phone number `+1-206-555-0123`
 
 ### Dashboard Updates
 - **Load Dashboard (New)**: Added "Created Date" column between Equipment and Status
@@ -8,35 +14,33 @@
 - **Load Dashboard with Assignments**: Added "Created Date" column between Cargo and Status
 - **Shipper Dashboard**: Already had created date column ✅
 
-### Database Schema
-- The `loadRequests` table already had `createdAt` timestamp field with `defaultNow()` ✅
-- All new load requests automatically get creation timestamp
-
-### Google Sheets Integration
-- Already includes "Created At" column in headers ✅
-- Sync includes: `loadRequest.createdAt?.toISOString() || new Date().toISOString()`
-- Data appears in proper ISO format for spreadsheet compatibility
+### Code Cleanup
+- Removed duplicate class members in storage (eliminated build warnings)
+- Fixed OpenAI extraction to preserve actual customer phone numbers
 
 ## New Production Package
 
-**Latest Version: truckflow-v1.4.0-production.tar.gz**
+**Latest Version: truckflow-v1.4.1-production.tar.gz**
 
 ### What's Included:
-- Created date column in all dashboard tables
-- Date formatted as `new Date(load.createdAt).toLocaleDateString()`
-- Cleaned up duplicate class members (removed build warnings)
-- Updated Google Sheets integration (already working)
+- ✅ Phone numbers display correctly (no more XXX masking)
+- ✅ Created date column in all dashboard tables
+- ✅ Clean build without warnings
+- ✅ Sample data with proper phone number format
 
 ## For Your EC2 Deployment
 
-1. **Download**: `truckflow-v1.4.0-production.tar.gz`
+1. **Download**: `truckflow-v1.4.1-production.tar.gz`
 2. **Deploy**: Extract and run `./deploy-production.sh`
-3. **Result**: All dashboard tables now show when each load request was created
+3. **Result**: 
+   - All customer phone numbers display correctly
+   - Dashboard tables show creation dates
+   - New load requests will extract actual phone numbers
 
-## Date Display Format
+## What You'll See Now
 
-The created date appears as:
-- **Dashboard**: `MM/DD/YYYY` (localized format)
-- **Google Sheets**: `YYYY-MM-DDTHH:mm:ss.sssZ` (ISO format for data integrity)
+- **Customer Phone**: `+1-206-555-0123` (actual numbers)
+- **Created Date**: `7/28/2025` (readable format)
+- **Google Sheets**: Proper phone numbers and ISO timestamps
 
-Load requests now have complete date tracking in both the dashboard interface and Google Sheets data export, giving you full visibility into when requests were received.
+The phone number masking issue is completely resolved, and all new load requests will properly extract and display customer phone numbers from call transcripts.

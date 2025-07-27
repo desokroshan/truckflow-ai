@@ -79,7 +79,7 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
             "deadline": "deadline if mentioned",
             "additionalNotes": "special requirements"
           }
-          Infer missing info from context. Use (XXX) XXX-XXXX for phone format.`
+          Extract actual phone numbers if mentioned in the call. If no phone number is provided in the transcript, use caller ID or contact info if available.`
         },
         {
           role: "user",
