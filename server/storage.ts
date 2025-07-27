@@ -9,6 +9,7 @@ export interface IStorage {
   // Load requests
   getLoadRequest(id: number): Promise<LoadRequest | undefined>;
   getLoadRequestByLoadId(loadId: string): Promise<LoadRequest | undefined>;
+  updateLoadRequest(id: number, loadRequest: Partial<LoadRequest>): Promise<LoadRequest | undefined>;
   getAllLoadRequests(): Promise<LoadRequest[]>;
   createLoadRequest(loadRequest: InsertLoadRequest): Promise<LoadRequest>;
   updateLoadRequestStatus(id: number, status: string, approvedAt?: Date): Promise<LoadRequest | undefined>;
@@ -115,9 +116,22 @@ export class MemStorage implements IStorage {
   }
 
   async getLoadRequestByLoadId(loadId: string): Promise<LoadRequest | undefined> {
-    return Array.from(this.loadRequests.values()).find(
-      (request) => request.loadId === loadId,
-    );
+    for (const loadRequest of this.loadRequests.values()) {
+      if (loadRequest.loadId === loadId) {
+        return loadRequest;
+      }
+    }
+    return undefined;
+  }
+
+  async updateLoadRequest(id: number, loadRequest: Partial<LoadRequest>): Promise<LoadRequest | undefined> {
+    const existing = this.loadRequests.get(id);
+    if (!existing) {
+      return undefined;
+    }
+    const updated = { ...existing, ...loadRequest };
+    this.loadRequests.set(id, updated);
+    return updated;
   }
 
   async getAllLoadRequests(): Promise<LoadRequest[]> {

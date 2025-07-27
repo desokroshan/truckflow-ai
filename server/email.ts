@@ -142,47 +142,90 @@ export async function sendOwnerSMS(
   console.log(`🚛 TruckFlow AI: New load request ${loadId} from ${customerName}. Route: ${route}. Check email for details.`);
 }
 
+// Track processed emails to prevent duplicates
+const processedEmails = new Set<string>();
+
+// Generate a unique hash for email content to prevent duplicates
+function generateEmailHash(emailContent: string, fromAddress: string, timestamp: string): string {
+  const crypto = require('crypto');
+  const hashInput = `${fromAddress}:${emailContent.slice(0, 500)}:${timestamp}`;
+  return crypto.createHash('md5').update(hashInput).digest('hex');
+}
+
 // Email monitoring functionality
-export async function processIncomingEmail(emailContent: string, fromAddress: string): Promise<void> {
+export async function processIncomingEmail(emailContent: string, fromAddress: string, messageId?: string): Promise<void> {
   try {
     console.log(`Processing incoming email from ${fromAddress}`);
-    console.log(`Email content: ${emailContent}`);
+    
     // Parse email content
     const parsed = await simpleParser(emailContent);
-    console.log(`Parsed email content (text):`, parsed.text);
-    console.log(`Parsed email content (html):`, parsed.html);
-    
     const emailText =
       typeof parsed.text === 'string' ? parsed.text :
       typeof parsed.html === 'string' ? parsed.html.replace(/<[^>]*>/g, '') :
       emailContent?.toString() || '';
     
-    console.log(`Final email text for processing: ${emailText}`);
+    // Create unique identifier for this email
+    const emailHash = messageId || generateEmailHash(emailText, fromAddress, parsed.date?.toISOString() || new Date().toISOString());
+    
+    // Check if we've already processed this email
+    if (processedEmails.has(emailHash)) {
+      console.log(`Email already processed (hash: ${emailHash}), skipping...`);
+      return;
+    }
+    
+    // Add to processed emails set
+    processedEmails.add(emailHash);
+    console.log(`Processing new email (hash: ${emailHash})`);
+    
+    // Check if email text is meaningful for load requests
+    if (!emailText || emailText.trim().length < 20) {
+      console.log('Email content too short or empty, skipping load request creation');
+      return;
+    }
+    
+    console.log(`Final email text for processing: ${emailText.slice(0, 200)}...`);
     
     // Use AI to extract load information from email
     const extractedData = await extractLoadInfo(emailText);
-    console.log(`Extracted load information: ${extractedData}`);
+    console.log(`Extracted load information:`, JSON.stringify(extractedData, null, 2));
     
-    // Generate load ID
-    const loadId = `EML-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+    // Only create load request if we have meaningful pickup/delivery information
+    if (!extractedData.pickupLocation && !extractedData.deliveryLocation) {
+      console.log('No meaningful pickup/delivery information found, skipping load request creation');
+      return;
+    }
+    
+    // Generate unique load ID using the email hash
+    const loadId = `EML-${new Date().getFullYear()}-${emailHash.slice(0, 4).toUpperCase()}`;
+    
+    // Check if load request with this ID already exists
+    try {
+      const existingLoad = await storage.getLoadRequestByLoadId(loadId);
+      if (existingLoad) {
+        console.log(`Load request ${loadId} already exists, skipping duplicate creation`);
+        return;
+      }
+    } catch (error) {
+      // If getLoadRequestByLoadId doesn't exist or fails, continue with creation
+    }
     
     // Create load request from email
     const loadRequest = await storage.createLoadRequest({
       loadId,
       customerName: extractedData.customerName || "Email Customer",
       customerPhone: extractedData.customerPhone || fromAddress,
-      pickupLocation: extractedData.pickupLocation,
-      pickupAddress: extractedData.pickupAddress,
-      deliveryLocation: extractedData.deliveryLocation,
-      deliveryAddress: extractedData.deliveryAddress,
-      cargoType: extractedData.cargoType,
-      weight: extractedData.weight,
-      truckType: extractedData.truckType,
+      pickupLocation: extractedData.pickupLocation || "Not specified",
+      pickupAddress: extractedData.pickupAddress || "Not specified",
+      deliveryLocation: extractedData.deliveryLocation || "Not specified", 
+      deliveryAddress: extractedData.deliveryAddress || "Not specified",
+      cargoType: extractedData.cargoType || "Not specified",
+      weight: extractedData.weight || "0",
+      truckType: extractedData.truckType || "Standard",
       pickupTime: extractedData.pickupTime,
       deliveryTime: extractedData.deliveryTime,
       deadline: extractedData.deadline,
       status: "pending",
-      transcription: `Email from: ${fromAddress}\n\n${emailText}`,
+      transcription: `Email from: ${fromAddress}\nMessage ID: ${emailHash}\n\n${emailText}`,
       extractedData: JSON.stringify(extractedData),
       notificationSent: false,
     });
@@ -321,13 +364,18 @@ function fetchNewEmails() {
         });
       });
 
-      msg.once('attributes', (attrs) => {
+      let attrs: any;
+      msg.once('attributes', (msgAttrs) => {
+        attrs = msgAttrs;
         fromAddress = attrs.envelope?.from?.[0]?.address || 'unknown';
       });
 
       msg.once('end', () => {
+        // Get message ID for duplicate prevention
+        const messageId = attrs.uid?.toString() || undefined;
+        
         // Process the email for load requests
-        processIncomingEmail(emailContent, fromAddress).catch(error => {
+        processIncomingEmail(emailContent, fromAddress, messageId).catch(error => {
           console.error('Error processing email:', error);
         });
       });

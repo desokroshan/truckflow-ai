@@ -102,8 +102,8 @@ Changelog:
 - July 26, 2025. Added created date column to all load request dashboard tables and Google Sheets integration
 
 ## Deployment Versions
-- **Latest:** v1.4.2 - Added recording download retry mechanism, fixed phone number masking, created date tracking
-- **Previous:** v1.4.1 - Phone number fix, v1.4.0 - Created date, v1.3.0 - Environment template, v1.2.0 - Dependency fixes
+- **Latest:** v1.4.3 - Email duplicate prevention, recording retry mechanism, phone number fix, created date tracking
+- **Previous:** v1.4.2 - Recording retry, v1.4.1 - Phone number fix, v1.4.0 - Created date, v1.3.0 - Environment template
 
 ## User Preferences
 
