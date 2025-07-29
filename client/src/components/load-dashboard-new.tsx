@@ -23,6 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { LoadRequest } from "@shared/schema";
 import { useState } from "react";
+import SimpleModalTest from "./simple-modal-test";
 
 // Load Request Details Modal Component
 function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
@@ -217,6 +218,8 @@ export default function LoadDashboard() {
   const queryClient = useQueryClient();
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  console.log('LoadDashboard render - isDialogOpen:', isDialogOpen, 'selectedLoad:', selectedLoad?.loadId);
   
   const { data: loadRequests = [], isLoading } = useQuery<LoadRequest[]>({
     queryKey: ["/api/load-requests"],
@@ -265,8 +268,10 @@ export default function LoadDashboard() {
             <TableRow 
               key={load.id} 
               className="cursor-pointer hover:bg-slate-50"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 console.log('Row clicked, load:', load);
+                console.log('Setting dialog open to true');
                 setSelectedLoad(load);
                 setIsDialogOpen(true);
               }}
@@ -335,6 +340,8 @@ export default function LoadDashboard() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
+                        console.log('View Details button clicked, load:', load);
                         setSelectedLoad(load);
                         setIsDialogOpen(true);
                       }}
@@ -379,6 +386,9 @@ export default function LoadDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Debug Modal Test */}
+        <SimpleModalTest />
+        
         {loadRequests.length === 0 ? (
           <div className="text-center py-8">
             <Truck className="mx-auto h-12 w-12 text-slate-400 mb-4" />
