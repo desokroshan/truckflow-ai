@@ -12,6 +12,20 @@ interface Metrics {
 export default function StatusOverview() {
   const { data: metrics, isLoading } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/metrics", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    },
   });
 
   const statsCards = [
@@ -28,7 +42,7 @@ export default function StatusOverview() {
       value: metrics?.loadsProcessed || 0,
       icon: Package,
       color: "bg-green-100 text-success",
-      change: "75% conversion rate",
+      change: `${metrics?.loadsProcessed || 0} total loads`,
       changeColor: "text-success",
     },
     {

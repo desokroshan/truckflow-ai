@@ -1088,7 +1088,8 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       const pendingApproval = loadRequests.filter(load => load.status === "pending").length;
 
       const approvedLoads = loadRequests.filter(load => load.status === "approved");
-      const totalRevenue = approvedLoads.length * 2500; // Mock revenue calculation
+      // Calculate revenue based on approved loads - estimate $2500 per load
+      const totalRevenue = approvedLoads.length * 2500;ulation
 
       res.json({
         callsToday: todaysCalls,
