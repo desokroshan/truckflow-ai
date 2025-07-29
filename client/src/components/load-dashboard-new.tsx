@@ -266,6 +266,7 @@ export default function LoadDashboard() {
               key={load.id} 
               className="cursor-pointer hover:bg-slate-50"
               onClick={() => {
+                console.log('Row clicked, load:', load);
                 setSelectedLoad(load);
                 setIsDialogOpen(true);
               }}
@@ -422,9 +423,11 @@ export default function LoadDashboard() {
       </CardContent>
 
       {/* Dialog for Load Request Details */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        {selectedLoad && <LoadRequestDetailsModal load={selectedLoad} />}
-      </Dialog>
+      {selectedLoad && (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <LoadRequestDetailsModal load={selectedLoad} />
+        </Dialog>
+      )}
     </Card>
   );
 }
