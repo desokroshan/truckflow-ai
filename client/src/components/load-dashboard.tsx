@@ -10,15 +10,163 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Check, X, Eye, Download, Filter, Truck, MapPin } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { LoadRequest } from "@shared/schema";
+import { useState } from "react";
+
+// Load Request Details Modal Component
+function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
+  return (
+    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <Truck className="h-5 w-5" />
+          Load Request Details - {load.loadId}
+        </DialogTitle>
+      </DialogHeader>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        {/* Customer Information */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-slate-900">Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Name:</span>
+              <span className="text-slate-900 font-medium">{load.customerName}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Phone:</span>
+              <span className="text-slate-900">{load.customerPhone}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Email:</span>
+              <span className="text-slate-900">N/A</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Route Information */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-slate-900">Route Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Pickup:</span>
+              <span className="text-slate-900 text-right flex-1 ml-2">{load.pickupLocation}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Delivery:</span>
+              <span className="text-slate-900 text-right flex-1 ml-2">{load.deliveryLocation}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Distance:</span>
+              <span className="text-slate-900">N/A</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Load Details */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-slate-900">Load Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Cargo Type:</span>
+              <span className="text-slate-900">{load.cargoType}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Weight:</span>
+              <span className="text-slate-900">{load.weight}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Truck Type:</span>
+              <span className="text-slate-900">{load.truckType}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Special Requirements:</span>
+              <span className="text-slate-900">None</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Timestamps */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-slate-900">Timestamps</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Created:</span>
+              <span className="text-slate-900">
+                {load.createdAt ? new Date(load.createdAt).toLocaleString() : 'N/A'}
+              </span>
+            </div>
+            {load.approvedAt && (
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-600">Approved:</span>
+                <span className="text-slate-900">
+                  {new Date(load.approvedAt).toLocaleString()}
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* AI Processing Results */}
+        {(load.transcription || load.extractedData) && (
+          <Card className="md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                AI Processing Results
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {load.transcription && (
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Transcription:</label>
+                  <div className="bg-slate-50 p-3 rounded-md text-xs text-slate-700 max-h-32 overflow-y-auto">
+                    {load.transcription}
+                  </div>
+                </div>
+              )}
+              
+              {load.extractedData && (
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Extracted Data:</label>
+                  <div className="bg-slate-50 p-3 rounded-md text-xs text-slate-700 max-h-32 overflow-y-auto">
+                    <pre className="whitespace-pre-wrap">{JSON.stringify(JSON.parse(load.extractedData), null, 2)}</pre>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </DialogContent>
+  );
+}
 
 export default function LoadDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  console.log('LoadDashboard render - isDialogOpen:', isDialogOpen, 'selectedLoad:', selectedLoad?.loadId);
   
   const { data: loadRequests = [], isLoading } = useQuery<LoadRequest[]>({
     queryKey: ["/api/load-requests"],
@@ -187,9 +335,19 @@ export default function LoadDashboard() {
               </TableHeader>
               <TableBody>
                 {loadRequests.map((load) => (
-                  <TableRow key={load.id}>
+                  <TableRow 
+                    key={load.id}
+                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Row clicked, load:', load);
+                      console.log('Setting dialog open to true');
+                      setSelectedLoad(load);
+                      setIsDialogOpen(true);
+                    }}
+                  >
                     <TableCell>
-                      <span className="font-mono text-sm font-medium">
+                      <span className="font-mono text-sm font-medium hover:text-blue-600 hover:underline">
                         {load.loadId}
                       </span>
                     </TableCell>
@@ -276,6 +434,12 @@ export default function LoadDashboard() {
                           size="sm"
                           variant="ghost"
                           className="text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('View Details button clicked, load:', load);
+                            setSelectedLoad(load);
+                            setIsDialogOpen(true);
+                          }}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -288,6 +452,13 @@ export default function LoadDashboard() {
           </div>
         )}
       </CardContent>
+
+      {/* Dialog for Load Request Details */}
+      {selectedLoad && (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <LoadRequestDetailsModal load={selectedLoad} />
+        </Dialog>
+      )}
     </Card>
   );
 }
