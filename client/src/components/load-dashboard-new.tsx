@@ -394,7 +394,7 @@ export default function LoadDashboard() {
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              {renderLoadTable(loadRequests)}
+              {renderLoadTable(loadRequests, true)}
             </TabsContent>
             
             <TabsContent value="pending" className="mt-4">
@@ -415,7 +415,7 @@ export default function LoadDashboard() {
                   <p className="text-slate-500">No approved requests</p>
                 </div>
               ) : (
-                renderLoadTable(approvedRequests, false)
+                renderLoadTable(approvedRequests, true)
               )}
             </TabsContent>
           </Tabs>
