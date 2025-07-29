@@ -216,6 +216,7 @@ export default function LoadDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const { data: loadRequests = [], isLoading } = useQuery<LoadRequest[]>({
     queryKey: ["/api/load-requests"],
@@ -264,17 +265,15 @@ export default function LoadDashboard() {
             <TableRow 
               key={load.id} 
               className="cursor-pointer hover:bg-slate-50"
-              onClick={() => setSelectedLoad(load)}
+              onClick={() => {
+                setSelectedLoad(load);
+                setIsDialogOpen(true);
+              }}
             >
               <TableCell className="font-mono text-sm">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <span className="hover:text-blue-600 hover:underline cursor-pointer">
-                      {load.loadId}
-                    </span>
-                  </DialogTrigger>
-                  <LoadRequestDetailsModal load={load} />
-                </Dialog>
+                <span className="hover:text-blue-600 hover:underline cursor-pointer">
+                  {load.loadId}
+                </span>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
@@ -318,7 +317,10 @@ export default function LoadDashboard() {
                   <div className="flex gap-2">
                     {load.status === "pending" && (
                       <Button
-                        onClick={() => approveMutation.mutate(load.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          approveMutation.mutate(load.id);
+                        }}
                         disabled={approveMutation.isPending}
                         size="sm"
                         className="bg-green-600 hover:bg-green-700"
@@ -327,19 +329,18 @@ export default function LoadDashboard() {
                         Approve
                       </Button>
                     )}
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedLoad(load)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Details
-                        </Button>
-                      </DialogTrigger>
-                      {selectedLoad && <LoadRequestDetailsModal load={selectedLoad} />}
-                    </Dialog>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedLoad(load);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
                   </div>
                 </TableCell>
               )}
@@ -419,6 +420,11 @@ export default function LoadDashboard() {
           </Tabs>
         )}
       </CardContent>
+
+      {/* Dialog for Load Request Details */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {selectedLoad && <LoadRequestDetailsModal load={selectedLoad} />}
+      </Dialog>
     </Card>
   );
 }
