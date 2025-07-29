@@ -213,7 +213,8 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
     const loadRequest = await storage.createLoadRequest({
       loadId,
       customerName: extractedData.customerName || "Email Customer",
-      customerPhone: extractedData.customerPhone || fromAddress,
+      customerPhone: extractedData.customerPhone || "Not provided",
+      customerEmail: fromAddress, // Store sender email as customer email
       pickupLocation: extractedData.pickupLocation || "Not specified",
       pickupAddress: extractedData.pickupAddress || "Not specified",
       deliveryLocation: extractedData.deliveryLocation || "Not specified", 

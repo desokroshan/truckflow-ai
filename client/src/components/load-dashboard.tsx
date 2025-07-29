@@ -51,7 +51,7 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">Email:</span>
-              <span className="text-slate-900">N/A</span>
+              <span className="text-slate-900">{load.customerEmail || 'Not provided'}</span>
             </div>
           </CardContent>
         </Card>
@@ -77,7 +77,7 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
           </CardContent>
         </Card>
 
-        {/* Load Details */}
+        {/* Load Details & Timestamps */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-900">Load Details</CardTitle>
@@ -99,15 +99,7 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
               <span className="text-slate-600">Special Requirements:</span>
               <span className="text-slate-900">None</span>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Timestamps */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-900">Timestamps</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+            <div className="border-t border-slate-200 my-3"></div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">Created:</span>
               <span className="text-slate-900">
