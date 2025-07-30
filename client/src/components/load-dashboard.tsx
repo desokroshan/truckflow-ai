@@ -397,7 +397,10 @@ export default function LoadDashboard() {
                         {load.status === "pending" && (
                           <>
                             <Button
-                              onClick={() => handleApprove(load.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApprove(load.id);
+                              }}
                               disabled={approveMutation.isPending}
                               size="sm"
                               variant="ghost"
@@ -406,7 +409,10 @@ export default function LoadDashboard() {
                               <Check className="w-4 h-4" />
                             </Button>
                             <Button
-                              onClick={() => handleReject(load.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(load.id);
+                              }}
                               disabled={rejectMutation.isPending}
                               size="sm"
                               variant="ghost"
