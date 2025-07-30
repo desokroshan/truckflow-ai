@@ -57,9 +57,26 @@ export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise
       truckType: loadRequest.truckType,
     });
 
+    // Prepare multiple locations data
+    let additionalPickups = "";
+    let additionalDeliveries = "";
+    
+    try {
+      if (loadRequest.pickupLocations) {
+        const pickupLocs = JSON.parse(loadRequest.pickupLocations);
+        additionalPickups = pickupLocs.map((loc: any) => `${loc.location} (${loc.address})`).join("; ");
+      }
+      if (loadRequest.deliveryLocations) {
+        const deliveryLocs = JSON.parse(loadRequest.deliveryLocations);
+        additionalDeliveries = deliveryLocs.map((loc: any) => `${loc.location} (${loc.address})`).join("; ");
+      }
+    } catch (e) {
+      console.log("Error parsing location data for Google Sheets:", e);
+    }
+
     // Prepare the row data to match header order exactly
     // Headers: Load ID, Customer Name, Customer Phone, Pickup Location, Delivery Location, 
-    //          Cargo Type, Weight, Truck Type, Pickup Time, Delivery Time, Deadline, Status, Created At, Approved At
+    //          Cargo Type, Weight, Truck Type, Pickup Time, Delivery Time, Deadline, Additional Pickups, Additional Deliveries, Status, Created At, Approved At
     const rowData = [
       loadRequest.loadId,
       loadRequest.customerName || "",
@@ -73,6 +90,8 @@ export async function saveLoadToGoogleSheets (loadRequest: LoadRequest): Promise
       loadRequest.deliveryTime || "",
       loadRequest.deadline || "",
       loadRequest.additionalNotes || "",
+      additionalPickups,
+      additionalDeliveries,
       loadRequest.status,
       loadRequest.createdAt?.toISOString() || new Date().toISOString(),
       loadRequest.approvedAt?.toISOString() || "",
@@ -207,12 +226,12 @@ export async function initializeGoogleSheet(): Promise<void> {
     const headers = [
       "Load ID", "Customer Name", "Customer Phone", "Pickup Location", "Delivery Location",
       "Cargo Type", "Weight", "Truck Type", "Pickup Time", "Delivery Time", "Deadline",
-      "Additional Notes", "Status", "Created At", "Approved At"
+      "Additional Notes", "Additional Pickups", "Additional Deliveries", "Status", "Created At", "Approved At"
     ];
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1:P1`,
+      range: `${SHEET_NAME}!A1:Q1`,
       valueInputOption: "RAW",
       requestBody: {
         values: [headers],

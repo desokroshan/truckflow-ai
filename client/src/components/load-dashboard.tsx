@@ -16,11 +16,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain, User, Bug } from "lucide-react";
+import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain, User, Bug, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CreateLoadRequestForm } from "./create-load-request-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { LoadRequest, Driver, TruckData, Assignment } from "@shared/schema";
@@ -63,33 +64,123 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
         {/* Route Information */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-900">Route Information</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-900 flex items-center">
+              <MapPin className="w-4 h-4 mr-2" />
+              Route Information
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Pickup:</span>
-              <span className="text-slate-900 text-right flex-1 ml-2">{load.pickupLocation}</span>
-            </div>
-            {load.pickupContactName && (
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-600">Pickup Contact:</span>
-                <span className="text-slate-900">{load.pickupContactName}</span>
+          <CardContent className="space-y-4">
+            {/* Primary pickup/delivery */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="font-medium text-green-700 text-xs">PRIMARY PICKUP</div>
+                <div className="text-xs">
+                  <span className="text-slate-600">Location:</span>
+                  <span className="text-slate-900 ml-2">{load.pickupLocation}</span>
+                </div>
+                <div className="text-xs text-slate-500">{load.pickupAddress}</div>
+                {load.pickupContactName && (
+                  <div className="text-xs">
+                    <span className="text-slate-600">Contact:</span>
+                    <span className="text-slate-900 ml-2">{load.pickupContactName}</span>
+                  </div>
+                )}
+                {load.pickupContactPhone && (
+                  <div className="text-xs">
+                    <span className="text-slate-600">Phone:</span>
+                    <span className="text-slate-900 ml-2">{load.pickupContactPhone}</span>
+                  </div>
+                )}
               </div>
-            )}
-            {load.pickupContactPhone && (
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-600">Contact Phone:</span>
-                <span className="text-slate-900">{load.pickupContactPhone}</span>
+              <div className="space-y-2">
+                <div className="font-medium text-blue-700 text-xs">PRIMARY DELIVERY</div>
+                <div className="text-xs">
+                  <span className="text-slate-600">Location:</span>
+                  <span className="text-slate-900 ml-2">{load.deliveryLocation}</span>
+                </div>
+                <div className="text-xs text-slate-500">{load.deliveryAddress}</div>
               </div>
-            )}
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Delivery:</span>
-              <span className="text-slate-900 text-right flex-1 ml-2">{load.deliveryLocation}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Distance:</span>
-              <span className="text-slate-900">N/A</span>
-            </div>
+
+            {/* Multiple pickup locations */}
+            {load.pickupLocations && (() => {
+              try {
+                const pickupLocations = JSON.parse(load.pickupLocations);
+                if (pickupLocations && pickupLocations.length > 0) {
+                  return (
+                    <div className="border-t pt-4">
+                      <div className="font-medium text-green-700 text-xs mb-3">ADDITIONAL PICKUP LOCATIONS</div>
+                      <div className="space-y-3">
+                        {pickupLocations.map((location: any, index: number) => (
+                          <div key={index} className="bg-green-50 p-3 rounded-lg">
+                            <div className="text-xs font-medium text-slate-900">{location.location}</div>
+                            <div className="text-xs text-slate-500">{location.address}</div>
+                            {location.contactName && (
+                              <div className="text-xs mt-1">
+                                <span className="text-slate-600">Contact:</span>
+                                <span className="text-slate-900 ml-2">{location.contactName}</span>
+                                {location.contactPhone && <span className="text-slate-500 ml-2">({location.contactPhone})</span>}
+                              </div>
+                            )}
+                            {location.scheduledTime && (
+                              <div className="text-xs text-slate-600 mt-1">
+                                Scheduled: {new Date(location.scheduledTime).toLocaleString()}
+                              </div>
+                            )}
+                            {location.instructions && (
+                              <div className="text-xs text-slate-600 mt-1 italic">{location.instructions}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (e) {
+                return null;
+              }
+              return null;
+            })()}
+
+            {/* Multiple delivery locations */}
+            {load.deliveryLocations && (() => {
+              try {
+                const deliveryLocations = JSON.parse(load.deliveryLocations);
+                if (deliveryLocations && deliveryLocations.length > 0) {
+                  return (
+                    <div className="border-t pt-4">
+                      <div className="font-medium text-blue-700 text-xs mb-3">ADDITIONAL DELIVERY LOCATIONS</div>
+                      <div className="space-y-3">
+                        {deliveryLocations.map((location: any, index: number) => (
+                          <div key={index} className="bg-blue-50 p-3 rounded-lg">
+                            <div className="text-xs font-medium text-slate-900">{location.location}</div>
+                            <div className="text-xs text-slate-500">{location.address}</div>
+                            {location.contactName && (
+                              <div className="text-xs mt-1">
+                                <span className="text-slate-600">Contact:</span>
+                                <span className="text-slate-900 ml-2">{location.contactName}</span>
+                                {location.contactPhone && <span className="text-slate-500 ml-2">({location.contactPhone})</span>}
+                              </div>
+                            )}
+                            {location.scheduledTime && (
+                              <div className="text-xs text-slate-600 mt-1">
+                                Scheduled: {new Date(location.scheduledTime).toLocaleString()}
+                              </div>
+                            )}
+                            {location.instructions && (
+                              <div className="text-xs text-slate-600 mt-1 italic">{location.instructions}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (e) {
+                return null;
+              }
+              return null;
+            })()}
           </CardContent>
         </Card>
 
@@ -175,6 +266,7 @@ export default function LoadDashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [isBugReportDialogOpen, setIsBugReportDialogOpen] = useState(false);
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
   const [rationale, setRationale] = useState<string>("");
@@ -462,6 +554,10 @@ export default function LoadDashboard() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold">Recent Load Requests</CardTitle>
           <div className="flex space-x-2">
+            <Button onClick={() => setIsCreateFormOpen(true)} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Load Request
+            </Button>
             <Button onClick={() => setIsBugReportDialogOpen(true)} variant="outline" size="sm">
               <Bug className="w-4 h-4 mr-2" />
               Report Bug
@@ -649,7 +745,17 @@ export default function LoadDashboard() {
                 <h4 className="font-medium text-blue-900 mb-2">Load Details</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium">Route:</span> {selectedLoad.pickupLocation} → {selectedLoad.deliveryLocation}
+                    <span className="font-medium">Primary Route:</span> {selectedLoad.pickupLocation} → {selectedLoad.deliveryLocation}
+                    {selectedLoad.pickupLocations && (() => {
+                      try {
+                        const pickupLocs = JSON.parse(selectedLoad.pickupLocations);
+                        const deliveryLocs = selectedLoad.deliveryLocations ? JSON.parse(selectedLoad.deliveryLocations) : [];
+                        const totalStops = pickupLocs.length + deliveryLocs.length;
+                        return totalStops > 0 ? <div className="text-xs text-blue-600 mt-1">+ {totalStops} additional stops</div> : null;
+                      } catch (e) {
+                        return null;
+                      }
+                    })()}
                   </div>
                   <div>
                     <span className="font-medium">Cargo:</span> {selectedLoad.cargoType} ({selectedLoad.weight})
@@ -881,6 +987,12 @@ export default function LoadDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Load Request Form */}
+      <CreateLoadRequestForm 
+        isOpen={isCreateFormOpen} 
+        onClose={() => setIsCreateFormOpen(false)} 
+      />
     </Card>
   );
 }

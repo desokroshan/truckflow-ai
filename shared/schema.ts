@@ -27,6 +27,9 @@ export const loadRequests = pgTable("load_requests", {
   pickupContactPhone: text("pickup_contact_phone"),
   deliveryLocation: text("delivery_location").notNull(),
   deliveryAddress: text("delivery_address").notNull(),
+  // Multiple pickup/delivery locations stored as JSON arrays
+  pickupLocations: text("pickup_locations"), // JSON array of pickup location objects
+  deliveryLocations: text("delivery_locations"), // JSON array of delivery location objects
   cargoType: text("cargo_type").notNull(),
   weight: decimal("weight").notNull(),
   truckType: text("truck_type").notNull(),
@@ -140,6 +143,17 @@ export const insertLoadRequestSchema = createInsertSchema(loadRequests).omit({
   flaggedAt: true,
 });
 
+// Location validation schema
+export const locationSchema = z.object({
+  id: z.string(),
+  location: z.string().min(1, "Location is required"),
+  address: z.string().min(1, "Address is required"),
+  contactName: z.string().optional(),
+  contactPhone: z.string().optional(),
+  scheduledTime: z.string().optional(),
+  instructions: z.string().optional(),
+});
+
 // Load validation schema for checking completeness
 export const loadValidationSchema = z.object({
   customerName: z.string().min(1, "Customer name is required"),
@@ -155,6 +169,9 @@ export const loadValidationSchema = z.object({
   deliveryTime: z.string().optional(),
   deadline: z.string().optional(),
   additionalNotes: z.string().optional(),
+  // Multiple locations support
+  pickupLocations: z.array(locationSchema).optional(),
+  deliveryLocations: z.array(locationSchema).optional(),
 });
 
 // Flag load request schema
@@ -173,6 +190,17 @@ export type Truck = typeof trucks.$inferSelect;
 export type Assignment = typeof assignments.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
+
+// Location type for multiple pickup/delivery locations
+export type Location = {
+  id: string;
+  location: string;
+  address: string;
+  contactName?: string;
+  contactPhone?: string;
+  scheduledTime?: string;
+  instructions?: string;
+};
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLoadRequest = z.infer<typeof insertLoadRequestSchema>;

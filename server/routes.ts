@@ -337,6 +337,37 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Create load request (dispatcher or shipper)
+  app.post("/api/load-requests", authenticateToken, async (req: any, res: express.Response) => {
+    try {
+      console.log("Creating load request");
+      const loadRequestData = req.body;
+      
+      // Generate unique load ID if not provided
+      const loadId = loadRequestData.loadId || `TF-${Date.now()}`;
+      
+      const loadRequest = await storage.createLoadRequest({
+        ...loadRequestData,
+        loadId,
+        shipperId: req.user.role === 'shipper' ? req.user.id : null,
+        status: "pending",
+        notificationSent: false,
+      });
+
+      // Save to Google Sheets
+      try {
+        await saveLoadToGoogleSheets(loadRequest);
+      } catch (error) {
+        console.log("Google Sheets not configured, skipping...");
+      }
+
+      res.json(loadRequest);
+    } catch (error) {
+      console.error("Error creating load request:", error);
+      res.status(500).json({ error: "Failed to create load request" });
+    }
+  });
+
   // Create load request (shipper only)
   app.post("/api/shipper/load-requests", authenticateToken, authorizeRole(['shipper']), async (req: any, res: express.Response) => {
     try {

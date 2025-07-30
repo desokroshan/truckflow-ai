@@ -40,10 +40,12 @@ TruckFlow AI is an AI-powered automation system for trucking businesses that pro
 - **Assignment Engine**: Automated matching of loads to drivers and trucks
 
 ### Dashboard Interface
-- **Load Management**: Real-time dashboard for viewing and approving load requests
+- **Load Management**: Real-time dashboard for viewing and approving load requests with multiple pickup/delivery locations support
+- **Load Creation**: Comprehensive form for creating load requests with multiple stops, detailed location information, and contact details
 - **Status Overview**: Metrics and KPI tracking for business performance
 - **Fleet Monitoring**: Driver and truck availability management
 - **AI Processing Results**: Display of transcription and extracted data
+- **Bug Reporting**: Integrated bug reporting system with priority levels, categories, and Google Sheets tracking
 
 ## Data Flow
 
@@ -100,10 +102,12 @@ Changelog:
 - July 18, 2025. Optimized voice assistant response times - 40% faster processing, improved caller experience
 - July 22, 2025. Created versioned EC2 deployment packages with dependency resolution fixes
 - July 26, 2025. Added created date column to all load request dashboard tables and Google Sheets integration
+- July 30, 2025. Added comprehensive bug reporting system with Google Sheets integration and user-friendly dialog form
+- July 30, 2025. Implemented multiple pickup and delivery locations support for Load Requests with enhanced UI components
 
 ## Deployment Versions
-- **Latest:** v1.4.3 - Email duplicate prevention, recording retry mechanism, phone number fix, created date tracking
-- **Previous:** v1.4.2 - Recording retry, v1.4.1 - Phone number fix, v1.4.0 - Created date, v1.3.0 - Environment template
+- **Latest:** v1.5.0 - Multiple pickup/delivery locations, comprehensive bug reporting system with Google Sheets integration
+- **Previous:** v1.4.3 - Email duplicate prevention, recording retry mechanism, phone number fix, created date tracking
 
 ## User Preferences
 
