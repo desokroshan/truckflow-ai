@@ -111,6 +111,90 @@ export async function updateLoadStatusInGoogleSheets(loadId: string, status: str
   }
 }
 
+export async function saveBugReportToGoogleSheets(bugReport: {
+  id: string;
+  title: string;
+  description: string;
+  userEmail: string;
+  priority: string;
+  category: string;
+  createdAt: string;
+}): Promise<void> {
+  try {
+    if (!sheets || !SPREADSHEET_ID) {
+      console.log("Google Sheets not configured - cannot save bug report");
+      return;
+    }
+
+    const BUG_SHEET_NAME = "Bug Reports";
+    
+    // First, check if the Bug Reports sheet exists, if not create it
+    try {
+      await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${BUG_SHEET_NAME}!A1:A1`,
+      });
+    } catch (error) {
+      // Sheet doesn't exist, create it with headers
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: BUG_SHEET_NAME
+              }
+            }
+          }]
+        }
+      });
+
+      // Add headers to the new sheet
+      const headers = [
+        "Bug ID", "Title", "Description", "User Email", "Priority", 
+        "Category", "Status", "Created At", "Resolved At"
+      ];
+      
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${BUG_SHEET_NAME}!A1:I1`,
+        valueInputOption: "RAW",
+        requestBody: {
+          values: [headers],
+        },
+      });
+    }
+
+    // Prepare the bug report data
+    const values = [
+      bugReport.id,
+      bugReport.title,
+      bugReport.description,
+      bugReport.userEmail,
+      bugReport.priority,
+      bugReport.category,
+      "Open", // Default status
+      bugReport.createdAt,
+      "" // Resolved at - empty initially
+    ];
+
+    // Append the bug report to the sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${BUG_SHEET_NAME}!A:I`,
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [values],
+      },
+    });
+
+    console.log(`Bug report ${bugReport.id} saved to Google Sheets`);
+  } catch (error) {
+    console.error("Error saving bug report to Google Sheets:", error);
+    throw new Error("Failed to save bug report to Google Sheets: " + (error as Error).message);
+  }
+}
+
 export async function initializeGoogleSheet(): Promise<void> {
   try {
     // Only initialize if Google Sheets client is available

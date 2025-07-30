@@ -6,7 +6,7 @@ import { transcribeAudio, extractLoadInfo, generateLoadSummary } from "./openai"
 import { sendOwnerNotification, sendOwnerSMS } from "./email";
 import express from "express";
 import { Express } from "express";
-import { saveLoadToGoogleSheets, initializeGoogleSheet, updateLoadStatusInGoogleSheets } from "./googleSheets";
+import { saveLoadToGoogleSheets, initializeGoogleSheet, updateLoadStatusInGoogleSheets, saveBugReportToGoogleSheets } from "./googleSheets";
 import { processIncomingEmail } from "./email";
 import { validateLoadRequest, getValidationSummary, autoValidateLoadRequest, categorizeLoadRequests } from "./validation";
 import { validateLoadRequestWithAddresses, validateAddress } from './addressValidation';
@@ -207,6 +207,45 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     } catch (error) {
       console.error('Error processing test recording:', error);
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error occurred' });
+    }
+  });
+
+  // Bug report endpoint
+  app.post("/api/bug-reports", authenticateToken, async (req: express.Request, res: express.Response) => {
+    try {
+      const { title, description, priority, category } = req.body;
+      const user = (req as any).user;
+
+      // Validate required fields
+      if (!title || !description) {
+        return res.status(400).json({ error: "Title and description are required" });
+      }
+
+      // Generate unique bug ID
+      const bugId = `BUG-${Date.now()}`;
+      const createdAt = new Date().toISOString();
+
+      const bugReport = {
+        id: bugId,
+        title,
+        description,
+        userEmail: user.email,
+        priority: priority || "Medium",
+        category: category || "General",
+        createdAt
+      };
+
+      // Save to Google Sheets
+      await saveBugReportToGoogleSheets(bugReport);
+
+      res.json({ 
+        success: true, 
+        message: "Bug report submitted successfully",
+        bugId: bugId
+      });
+    } catch (error) {
+      console.error('Error submitting bug report:', error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to submit bug report' });
     }
   });
 

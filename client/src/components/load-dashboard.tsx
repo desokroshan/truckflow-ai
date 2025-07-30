@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain, User } from "lucide-react";
+import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain, User, Bug } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -174,9 +174,16 @@ export default function LoadDashboard() {
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+  const [isBugReportDialogOpen, setIsBugReportDialogOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
   const [rationale, setRationale] = useState<string>("");
+  const [bugReportData, setBugReportData] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    category: "General"
+  });
   const [recommendations, setRecommendations] = useState<{
     recommendedDriver: Driver | null;
     recommendedTruck: Truck | null;
@@ -387,6 +394,44 @@ export default function LoadDashboard() {
     createAssignmentMutation.mutate(assignmentData);
   };
 
+  const submitBugReportMutation = useMutation({
+    mutationFn: async (bugData: { title: string; description: string; priority: string; category: string }) => {
+      return await apiRequest("POST", "/api/bug-reports", bugData);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Bug Report Submitted",
+        description: `Bug report ${data.bugId} has been submitted successfully`,
+      });
+      setIsBugReportDialogOpen(false);
+      setBugReportData({
+        title: "",
+        description: "",
+        priority: "Medium",
+        category: "General"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Submission Failed",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleBugReportSubmit = () => {
+    if (!bugReportData.title || !bugReportData.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in both title and description",
+        variant: "destructive",
+      });
+      return;
+    }
+    submitBugReportMutation.mutate(bugReportData);
+  };
+
   const handleExport = () => {
     toast({
       title: "Export Started",
@@ -417,6 +462,10 @@ export default function LoadDashboard() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold">Recent Load Requests</CardTitle>
           <div className="flex space-x-2">
+            <Button onClick={() => setIsBugReportDialogOpen(true)} variant="outline" size="sm">
+              <Bug className="w-4 h-4 mr-2" />
+              Report Bug
+            </Button>
             <Button onClick={handleExport} variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Export
@@ -729,6 +778,107 @@ export default function LoadDashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bug Report Dialog */}
+      <Dialog open={isBugReportDialogOpen} onOpenChange={setIsBugReportDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bug className="h-5 w-5" />
+              Report a Bug
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bug-title" className="text-base font-medium">
+                Bug Title *
+              </Label>
+              <input
+                id="bug-title"
+                type="text"
+                value={bugReportData.title}
+                onChange={(e) => setBugReportData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Brief description of the issue..."
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="bug-description" className="text-base font-medium">
+                Description *
+              </Label>
+              <p className="text-sm text-gray-600 mb-2">
+                Describe the bug in detail. Include steps to reproduce, expected vs actual behavior.
+              </p>
+              <Textarea
+                id="bug-description"
+                value={bugReportData.description}
+                onChange={(e) => setBugReportData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Detailed description of the bug..."
+                rows={4}
+                className="w-full"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bug-priority" className="text-base font-medium">
+                  Priority
+                </Label>
+                <Select 
+                  value={bugReportData.priority} 
+                  onValueChange={(value) => setBugReportData(prev => ({ ...prev, priority: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="bug-category" className="text-base font-medium">
+                  Category
+                </Label>
+                <Select 
+                  value={bugReportData.category} 
+                  onValueChange={(value) => setBugReportData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="UI/UX">UI/UX</SelectItem>
+                    <SelectItem value="Performance">Performance</SelectItem>
+                    <SelectItem value="Data Processing">Data Processing</SelectItem>
+                    <SelectItem value="Integration">Integration</SelectItem>
+                    <SelectItem value="Security">Security</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setIsBugReportDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleBugReportSubmit}
+                disabled={submitBugReportMutation.isPending || !bugReportData.title || !bugReportData.description}
+              >
+                {submitBugReportMutation.isPending ? "Submitting..." : "Submit Bug Report"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
