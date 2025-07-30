@@ -66,6 +66,18 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
               <span className="text-slate-600">Pickup:</span>
               <span className="text-slate-900 text-right flex-1 ml-2">{load.pickupLocation}</span>
             </div>
+            {load.pickupContactName && (
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-600">Pickup Contact:</span>
+                <span className="text-slate-900">{load.pickupContactName}</span>
+              </div>
+            )}
+            {load.pickupContactPhone && (
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-600">Contact Phone:</span>
+                <span className="text-slate-900">{load.pickupContactPhone}</span>
+              </div>
+            )}
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">Delivery:</span>
               <span className="text-slate-900 text-right flex-1 ml-2">{load.deliveryLocation}</span>

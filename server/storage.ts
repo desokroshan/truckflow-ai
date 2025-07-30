@@ -142,14 +142,31 @@ export class MemStorage implements IStorage {
 
   async createLoadRequest(insertLoadRequest: InsertLoadRequest): Promise<LoadRequest> {
     const id = this.currentLoadRequestId++;
-    // Generate unique load ID
-    const loadId = `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
+    // Generate unique load ID if not provided
+    const loadId = insertLoadRequest.loadId || `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
     const loadRequest: LoadRequest = {
       ...insertLoadRequest,
       id,
       loadId,
       createdAt: new Date(),
+      shipperId: insertLoadRequest.shipperId || null,
+      customerEmail: insertLoadRequest.customerEmail || null,
+      pickupContactName: insertLoadRequest.pickupContactName || null,
+      pickupContactPhone: insertLoadRequest.pickupContactPhone || null,
+      pickupTime: insertLoadRequest.pickupTime || null,
+      deliveryTime: insertLoadRequest.deliveryTime || null,
+      deadline: insertLoadRequest.deadline || null,
+      additionalNotes: insertLoadRequest.additionalNotes || null,
+      transcription: insertLoadRequest.transcription || null,
+      extractedData: insertLoadRequest.extractedData || null,
+      validationStatus: insertLoadRequest.validationStatus || "pending",
+      missingFields: insertLoadRequest.missingFields || null,
+      validationNotes: insertLoadRequest.validationNotes || null,
+      flaggedForReview: insertLoadRequest.flaggedForReview || false,
+      flaggedBy: insertLoadRequest.flaggedBy || null,
+      flaggedAt: insertLoadRequest.flaggedAt || null,
       approvedAt: null,
+      notificationSent: insertLoadRequest.notificationSent || false,
     };
     this.loadRequests.set(id, loadRequest);
     return loadRequest;

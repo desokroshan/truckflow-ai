@@ -217,6 +217,8 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       customerEmail: fromAddress, // Store sender email as customer email
       pickupLocation: extractedData.pickupLocation || "Not specified",
       pickupAddress: extractedData.pickupAddress || "Not specified",
+      pickupContactName: extractedData.pickupContactName,
+      pickupContactPhone: extractedData.pickupContactPhone,
       deliveryLocation: extractedData.deliveryLocation || "Not specified", 
       deliveryAddress: extractedData.deliveryAddress || "Not specified",
       cargoType: extractedData.cargoType || "Not specified",

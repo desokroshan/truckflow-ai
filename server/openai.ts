@@ -43,6 +43,8 @@ interface ExtractedLoadInfo {
   customerPhone: string;
   pickupLocation: string;
   pickupAddress: string;
+  pickupContactName?: string;
+  pickupContactPhone?: string;
   deliveryLocation: string;
   deliveryAddress: string;
   cargoType: string;
@@ -69,6 +71,8 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
             "customerPhone": "string", 
             "pickupLocation": "city, state",
             "pickupAddress": "full address if given",
+            "pickupContactName": "contact person at pickup location if mentioned",
+            "pickupContactPhone": "contact phone at pickup location if mentioned",
             "deliveryLocation": "city, state",
             "deliveryAddress": "full address if given",
             "cargoType": "what's being shipped",
@@ -79,7 +83,10 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
             "deadline": "deadline if mentioned",
             "additionalNotes": "special requirements"
           }
-          Extract actual phone numbers if mentioned in the call. If no phone number is provided in the transcript, use caller ID or contact info if available.`
+          
+          Look for pickup contact information like "ask for John", "contact Mary at pickup", "call Bob when you arrive", etc.
+          Extract actual phone numbers if mentioned in the call. If no phone number is provided in the transcript, use caller ID or contact info if available.
+          Be precise and concise. Use "Not specified" for missing data.`
         },
         {
           role: "user",
