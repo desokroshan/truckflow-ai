@@ -25,6 +25,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { LoadRequest, Driver, TruckData, Assignment } from "@shared/schema";
 import { useState } from "react";
+import * as React from "react";
 
 // Load Request Details Modal Component
 function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
@@ -176,6 +177,17 @@ export default function LoadDashboard() {
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
   const [rationale, setRationale] = useState<string>("");
+  const [recommendations, setRecommendations] = useState<{
+    recommendedDriver: Driver | null;
+    recommendedTruck: Truck | null;
+    confidence: number;
+    reason: string;
+  }>({
+    recommendedDriver: null,
+    recommendedTruck: null,
+    confidence: 0,
+    reason: ""
+  });
 
   console.log('LoadDashboard render - isDialogOpen:', isDialogOpen, 'selectedLoad:', selectedLoad?.loadId);
   
@@ -216,6 +228,25 @@ export default function LoadDashboard() {
       return response.json();
     },
   });
+
+  // Fetch recommendations when assignment dialog opens
+  const { data: recommendationsData, isLoading: isLoadingRecommendations } = useQuery({
+    queryKey: ["/api/assignments/recommendations", selectedLoad?.id],
+    queryFn: async () => {
+      if (!selectedLoad) return null;
+      const response = await fetch(`/api/assignments/recommendations/${selectedLoad.id}`);
+      if (!response.ok) throw new Error("Failed to fetch recommendations");
+      return response.json();
+    },
+    enabled: isAssignmentDialogOpen && !!selectedLoad,
+  });
+
+  // Update recommendations when data changes
+  React.useEffect(() => {
+    if (recommendationsData) {
+      setRecommendations(recommendationsData);
+    }
+  }, [recommendationsData]);
 
   // Filter load requests by status
   const pendingRequests = loadRequests.filter(load => load.status === "pending");
@@ -505,13 +536,14 @@ export default function LoadDashboard() {
                         )}
                         {load.status === "approved" && (
                           <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLoad(load);
+                              setIsAssignmentDialogOpen(true);
+                            }}
                             size="sm"
                             variant="ghost"
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openAssignmentDialog(load);
-                            }}
                           >
                             <Truck className="w-4 h-4" />
                           </Button>
@@ -583,43 +615,88 @@ export default function LoadDashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="driver-select" className="text-base font-medium">
-                    Select Driver (Optional)
-                  </Label>
-                  <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a driver..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id.toString()}>
-                          {driver.name} - {driver.phone}
-                          {driver.availability === "available" ? " ✓" : " (Unavailable)"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Driver Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <User className="w-5 h-5 mr-2" />
+                      Driver Assignment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {recommendations.recommendedDriver && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 className="font-medium text-green-800 mb-2">Recommended Driver</h4>
+                        <div className="space-y-1 text-sm text-green-700">
+                          <div><strong>{recommendations.recommendedDriver.name}</strong></div>
+                          <div>{recommendations.recommendedDriver.email}</div>
+                          <div>{recommendations.recommendedDriver.phoneNumber}</div>
+                          <div>Oversized Qualified: {recommendations.recommendedDriver.qualifiedForOversized ? "Yes" : "No"}</div>
+                          <div>Standard Rate: {recommendations.recommendedDriver.standardBillingRate}</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <Label htmlFor="driver-select" className="text-base font-medium">
+                        Select Driver
+                      </Label>
+                      <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a driver..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {drivers.map((driver) => (
+                            <SelectItem key={driver.id} value={driver.id.toString()}>
+                              {driver.name} - {driver.phoneNumber}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                <div>
-                  <Label htmlFor="truck-select" className="text-base font-medium">
-                    Select Truck (Optional)
-                  </Label>
-                  <Select value={selectedTruckId} onValueChange={setSelectedTruckId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a truck..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {trucks.map((truck) => (
-                        <SelectItem key={truck.id} value={truck.id.toString()}>
-                          {truck.truckNumber} - {truck.type}
-                          {truck.availability === "available" ? " ✓" : " (Unavailable)"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Truck Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <Truck className="w-5 h-5 mr-2" />
+                      Truck Assignment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {recommendations.recommendedTruck && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-medium text-blue-800 mb-2">Recommended Truck</h4>
+                        <div className="space-y-1 text-sm text-blue-700">
+                          <div><strong>{recommendations.recommendedTruck.truckNumber}</strong></div>
+                          <div>{recommendations.recommendedTruck.make} {recommendations.recommendedTruck.model}</div>
+                          <div>{recommendations.recommendedTruck.truckType} • {recommendations.recommendedTruck.weightCapacity}</div>
+                          <div>Location: {recommendations.recommendedTruck.currentLocation || "Yard"}</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <Label htmlFor="truck-select" className="text-base font-medium">
+                        Select Truck
+                      </Label>
+                      <Select value={selectedTruckId} onValueChange={setSelectedTruckId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a truck..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {trucks.map((truck) => (
+                            <SelectItem key={truck.id} value={truck.id.toString()}>
+                              {truck.truckNumber} - {truck.make} {truck.model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div>
