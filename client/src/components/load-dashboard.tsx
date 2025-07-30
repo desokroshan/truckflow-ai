@@ -16,11 +16,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain } from "lucide-react";
+import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain, User } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { LoadRequest } from "@shared/schema";
+import type { LoadRequest, Driver, TruckData, Assignment } from "@shared/schema";
 import { useState } from "react";
 
 // Load Request Details Modal Component
@@ -169,6 +172,10 @@ export default function LoadDashboard() {
   const queryClient = useQueryClient();
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
+  const [selectedTruckId, setSelectedTruckId] = useState<string>("");
+  const [rationale, setRationale] = useState<string>("");
 
   console.log('LoadDashboard render - isDialogOpen:', isDialogOpen, 'selectedLoad:', selectedLoad?.loadId);
   
@@ -186,6 +193,26 @@ export default function LoadDashboard() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      return response.json();
+    },
+  });
+
+  // Fetch drivers for assignment
+  const { data: drivers = [] } = useQuery<Driver[]>({
+    queryKey: ["/api/drivers"],
+    queryFn: async () => {
+      const response = await fetch("/api/drivers");
+      if (!response.ok) throw new Error("Failed to fetch drivers");
+      return response.json();
+    },
+  });
+
+  // Fetch trucks for assignment
+  const { data: trucks = [] } = useQuery<TruckData[]>({
+    queryKey: ["/api/trucks"],
+    queryFn: async () => {
+      const response = await fetch("/api/trucks");
+      if (!response.ok) throw new Error("Failed to fetch trucks");
       return response.json();
     },
   });
@@ -237,6 +264,38 @@ export default function LoadDashboard() {
     },
   });
 
+  // Create assignment mutation
+  const createAssignmentMutation = useMutation({
+    mutationFn: async (assignmentData: {
+      loadRequestId: number;
+      driverId?: number;
+      truckId?: number;
+      rationale?: string;
+    }) => {
+      return await apiRequest("POST", "/api/assignments", assignmentData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/load-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
+      setIsAssignmentDialogOpen(false);
+      setSelectedLoad(null);
+      setSelectedDriverId("");
+      setSelectedTruckId("");
+      setRationale("");
+      toast({
+        title: "Assignment Created",
+        description: "Load has been assigned successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Assignment Failed",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -273,6 +332,28 @@ export default function LoadDashboard() {
 
   const handleReject = (id: number) => {
     rejectMutation.mutate(id);
+  };
+
+  const openAssignmentDialog = (load: LoadRequest) => {
+    setSelectedLoad(load);
+    setIsAssignmentDialogOpen(true);
+    // Reset selections
+    setSelectedDriverId("");
+    setSelectedTruckId("");
+    setRationale("");
+  };
+
+  const handleAssignmentSubmit = () => {
+    if (!selectedLoad) return;
+
+    const assignmentData = {
+      loadRequestId: selectedLoad.id,
+      driverId: selectedDriverId ? parseInt(selectedDriverId) : undefined,
+      truckId: selectedTruckId ? parseInt(selectedTruckId) : undefined,
+      rationale: rationale ? rationale : undefined,
+    };
+
+    createAssignmentMutation.mutate(assignmentData);
   };
 
   const handleExport = () => {
@@ -427,6 +508,10 @@ export default function LoadDashboard() {
                             size="sm"
                             variant="ghost"
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAssignmentDialog(load);
+                            }}
                           >
                             <Truck className="w-4 h-4" />
                           </Button>
@@ -469,6 +554,106 @@ export default function LoadDashboard() {
           <LoadRequestDetailsModal load={selectedLoad} />
         </Dialog>
       )}
+
+      {/* Assignment Dialog */}
+      <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Assign Driver & Truck - {selectedLoad?.loadId}</DialogTitle>
+          </DialogHeader>
+
+          {selectedLoad && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Load Details</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Route:</span> {selectedLoad.pickupLocation} → {selectedLoad.deliveryLocation}
+                  </div>
+                  <div>
+                    <span className="font-medium">Cargo:</span> {selectedLoad.cargoType} ({selectedLoad.weight})
+                  </div>
+                  <div>
+                    <span className="font-medium">Truck Type:</span> {selectedLoad.truckType}
+                  </div>
+                  <div>
+                    <span className="font-medium">Customer:</span> {selectedLoad.customerName}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="driver-select" className="text-base font-medium">
+                    Select Driver (Optional)
+                  </Label>
+                  <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a driver..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map((driver) => (
+                        <SelectItem key={driver.id} value={driver.id.toString()}>
+                          {driver.name} - {driver.phone}
+                          {driver.availability === "available" ? " ✓" : " (Unavailable)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="truck-select" className="text-base font-medium">
+                    Select Truck (Optional)
+                  </Label>
+                  <Select value={selectedTruckId} onValueChange={setSelectedTruckId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a truck..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {trucks.map((truck) => (
+                        <SelectItem key={truck.id} value={truck.id.toString()}>
+                          {truck.truckNumber} - {truck.type}
+                          {truck.availability === "available" ? " ✓" : " (Unavailable)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="assignment-rationale" className="text-base font-medium">
+                  Assignment Rationale (Optional)
+                </Label>
+                <p className="text-sm text-gray-600 mb-2">
+                  Explain why you chose this driver/truck combination:
+                </p>
+                <Textarea
+                  id="assignment-rationale"
+                  value={rationale}
+                  onChange={(e) => setRationale(e.target.value)}
+                  placeholder="e.g., Driver has experience with this route, truck is closest to pickup location..."
+                  rows={3}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsAssignmentDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAssignmentSubmit}
+                  disabled={createAssignmentMutation.isPending || (!selectedDriverId && !selectedTruckId)}
+                >
+                  {createAssignmentMutation.isPending ? "Creating Assignment..." : "Create Assignment"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
