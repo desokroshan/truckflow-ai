@@ -384,29 +384,67 @@ function fetchNewEmails() {
     }
 
     const fetch = imapClient.fetch(results, { 
-      bodies: '',
-      markSeen: true
+      bodies: 'HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID)',
+      markSeen: true,
+      envelope: true,
+      struct: true
     });
 
     fetch.on('message', (msg) => {
       let emailContent = '';
       let fromAddress = '';
+      let headers = '';
 
-      msg.on('body', (stream) => {
-        stream.on('data', (chunk) => {
-          emailContent += chunk.toString('utf8');
-        });
+      msg.on('body', (stream, info) => {
+        if (info.which === 'HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID)') {
+          stream.on('data', (chunk) => {
+            headers += chunk.toString('utf8');
+          });
+        } else {
+          stream.on('data', (chunk) => {
+            emailContent += chunk.toString('utf8');
+          });
+        }
       });
 
       let attrs: any;
       msg.once('attributes', (msgAttrs) => {
         attrs = msgAttrs;
-        fromAddress = attrs.envelope?.from?.[0]?.address || 'unknown';
+        console.log('Message attributes:', JSON.stringify(attrs, null, 2));
+        
+        // Try multiple ways to extract sender email
+        if (attrs.envelope && attrs.envelope.from && attrs.envelope.from.length > 0) {
+          fromAddress = attrs.envelope.from[0].address;
+          console.log('Extracted from envelope.from:', fromAddress);
+        } else if (attrs.envelope && attrs.envelope.sender && attrs.envelope.sender.length > 0) {
+          fromAddress = attrs.envelope.sender[0].address;
+          console.log('Extracted from envelope.sender:', fromAddress);
+        } else if (attrs.envelope && attrs.envelope.replyTo && attrs.envelope.replyTo.length > 0) {
+          fromAddress = attrs.envelope.replyTo[0].address;
+          console.log('Extracted from envelope.replyTo:', fromAddress);
+        } else {
+          console.log('No envelope data found, will parse from headers');
+        }
       });
 
       msg.once('end', () => {
+        // If we couldn't get fromAddress from envelope, try parsing headers
+        if (!fromAddress || fromAddress === 'unknown') {
+          console.log('Headers received:', headers);
+          const fromMatch = headers.match(/From:\s*([^<]*<)?([^>\s]+@[^>\s]+)/i);
+          if (fromMatch && fromMatch[2]) {
+            fromAddress = fromMatch[2];
+            console.log('Extracted from headers:', fromAddress);
+          } else {
+            fromAddress = 'unknown';
+            console.log('Could not extract email from headers either');
+          }
+        }
+        
+        console.log('Final fromAddress:', fromAddress);
+        
         // Get message ID for duplicate prevention
-        const messageId = attrs.uid?.toString() || undefined;
+        const messageId = attrs?.uid?.toString() || undefined;
         
         // Process the email for load requests
         processIncomingEmail(emailContent, fromAddress, messageId).catch(error => {
