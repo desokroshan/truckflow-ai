@@ -56,7 +56,11 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">Email:</span>
-              <span className="text-slate-900">{load.customerEmail || 'Not provided'}</span>
+              <span className="text-slate-900">
+                {load.customerEmail && load.customerEmail !== 'unknown' && load.customerEmail !== 'null' 
+                  ? load.customerEmail 
+                  : 'Not provided'}
+              </span>
             </div>
           </CardContent>
         </Card>

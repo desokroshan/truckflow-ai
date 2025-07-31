@@ -652,6 +652,7 @@ export class MemStorage implements IStorage {
       loadId: "EXT-2025-DEMO",
       customerName: "Roshan",
       customerPhone: "+1-206-555-0123",
+      customerEmail: "roshan@example.com",
       pickupLocation: "Seattle, WA",
       pickupAddress: "123 Pine St, Seattle, WA 98101",
       deliveryLocation: "Sammamish, WA",
