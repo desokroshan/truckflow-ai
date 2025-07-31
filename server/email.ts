@@ -431,9 +431,9 @@ function fetchNewEmails() {
         // If we couldn't get fromAddress from envelope, try parsing headers
         if (!fromAddress || fromAddress === 'unknown') {
           console.log('Headers received:', headers);
-          const fromMatch = headers.match(/From:\s*([^<]*<)?([^>\s]+@[^>\s]+)/i);
-          if (fromMatch && fromMatch[2]) {
-            fromAddress = fromMatch[2];
+          const fromMatch = headers.match(/From:\s*.*?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+          if (fromMatch && fromMatch[1]) {
+            fromAddress = fromMatch[1];
             console.log('Extracted from headers:', fromAddress);
           } else {
             fromAddress = 'unknown';
