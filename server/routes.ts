@@ -882,12 +882,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
         console.error("Error processing recording:", error);
       });
 
-      // Respond to caller with faster, more concise message
+      // Get configurable success response
+      const successSetting = await storage.getSetting("success_response");
+      const successMessage = successSetting?.value || "Got it! Processing your load request now. You'll receive confirmation within 10 minutes. Thank you!";
+
+      // Respond to caller with configurable success message
       const twiml = createTwiMLResponse();
       twiml.say({
         voice: "Polly.Joanna-Neural",
         language: "en-US"
-      }, "Got it! Processing your load request now. You'll receive confirmation within 10 minutes. Thank you!");
+      }, successMessage);
 
       twiml.hangup();
 

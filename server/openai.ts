@@ -129,13 +129,20 @@ Be precise and concise. Use "Not specified" for missing data. Empty arrays if no
 
 export async function generateLoadSummary(loadData: ExtractedLoadInfo): Promise<string> {
   try {
+    // Import storage here to avoid circular dependency
+    const { storage } = await import('./storage');
+    
+    // Get configurable prompt from settings
+    const promptSetting = await storage.getSetting('ai_summary_prompt');
+    const systemPrompt = promptSetting?.value || "Create concise load summary for trucking company owner. Include key details: customer, route, cargo, urgency.";
+    
     // Optimized for faster processing - use gpt-4o-mini for summary generation
     const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o-mini", // Faster, cheaper model for simple summarization
       messages: [
         {
           role: "system",
-          content: "Create concise load summary for trucking company owner. Include key details: customer, route, cargo, urgency."
+          content: systemPrompt
         },
         {
           role: "user",
