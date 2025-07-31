@@ -209,6 +209,34 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       // If getLoadRequestByLoadId doesn't exist or fails, continue with creation
     }
     
+    // Process additional locations if they exist (for email)
+    let pickupLocationsJson = null;
+    let deliveryLocationsJson = null;
+    
+    if (extractedData.additionalPickups && extractedData.additionalPickups.length > 0) {
+      pickupLocationsJson = JSON.stringify(extractedData.additionalPickups.map((pickup, index) => ({
+        id: `pickup-${index + 1}`,
+        location: pickup.location,
+        address: pickup.address || "Not specified",
+        contactName: pickup.contactName,
+        contactPhone: pickup.contactPhone,
+        scheduledTime: pickup.scheduledTime,
+        instructions: pickup.instructions
+      })));
+    }
+    
+    if (extractedData.additionalDeliveries && extractedData.additionalDeliveries.length > 0) {
+      deliveryLocationsJson = JSON.stringify(extractedData.additionalDeliveries.map((delivery, index) => ({
+        id: `delivery-${index + 1}`,
+        location: delivery.location,
+        address: delivery.address || "Not specified",
+        contactName: delivery.contactName,
+        contactPhone: delivery.contactPhone,
+        scheduledTime: delivery.scheduledTime,
+        instructions: delivery.instructions
+      })));
+    }
+
     // Create load request from email
     const loadRequest = await storage.createLoadRequest({
       loadId,
@@ -219,14 +247,17 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       pickupAddress: extractedData.pickupAddress || "Not specified",
       pickupContactName: extractedData.pickupContactName,
       pickupContactPhone: extractedData.pickupContactPhone,
-      deliveryLocation: extractedData.deliveryLocation || "Not specified", 
+      deliveryLocation: extractedData.deliveryLocation || "Not specified",
       deliveryAddress: extractedData.deliveryAddress || "Not specified",
       cargoType: extractedData.cargoType || "Not specified",
-      weight: extractedData.weight || "0",
-      truckType: extractedData.truckType || "Standard",
+      weight: extractedData.weight || "Not specified",
+      truckType: extractedData.truckType || "Not specified",
       pickupTime: extractedData.pickupTime,
       deliveryTime: extractedData.deliveryTime,
       deadline: extractedData.deadline,
+      additionalNotes: extractedData.additionalNotes,
+      pickupLocations: pickupLocationsJson,
+      deliveryLocations: deliveryLocationsJson,
       status: "pending",
       transcription: `Email from: ${fromAddress}\nMessage ID: ${emailHash}\n\n${emailText}`,
       extractedData: JSON.stringify(extractedData),

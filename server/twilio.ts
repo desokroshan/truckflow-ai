@@ -105,6 +105,34 @@ export async function processSMSWebhook(
     // Generate unique load ID
     const loadId = `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
     
+    // Process additional locations if they exist (for SMS)
+    let pickupLocationsJson = null;
+    let deliveryLocationsJson = null;
+    
+    if (extractedData.additionalPickups && extractedData.additionalPickups.length > 0) {
+      pickupLocationsJson = JSON.stringify(extractedData.additionalPickups.map((pickup, index) => ({
+        id: `pickup-${index + 1}`,
+        location: pickup.location,
+        address: pickup.address || "Not specified",
+        contactName: pickup.contactName,
+        contactPhone: pickup.contactPhone,
+        scheduledTime: pickup.scheduledTime,
+        instructions: pickup.instructions
+      })));
+    }
+    
+    if (extractedData.additionalDeliveries && extractedData.additionalDeliveries.length > 0) {
+      deliveryLocationsJson = JSON.stringify(extractedData.additionalDeliveries.map((delivery, index) => ({
+        id: `delivery-${index + 1}`,
+        location: delivery.location,
+        address: delivery.address || "Not specified",
+        contactName: delivery.contactName,
+        contactPhone: delivery.contactPhone,
+        scheduledTime: delivery.scheduledTime,
+        instructions: delivery.instructions
+      })));
+    }
+
     // Create load request
     const loadRequest = await storage.createLoadRequest({
       loadId,
@@ -121,6 +149,8 @@ export async function processSMSWebhook(
       deliveryTime: extractedData.deliveryTime,
       deadline: extractedData.deadline,
       additionalNotes: extractedData.additionalNotes,
+      pickupLocations: pickupLocationsJson,
+      deliveryLocations: deliveryLocationsJson,
       status: "pending",
       transcription: messageBody,
       extractedData: JSON.stringify(extractedData),
@@ -290,6 +320,34 @@ export async function processRecordingWebhook(
     // Generate unique load ID
     const loadId = `EXT-${new Date().getFullYear()}-${nanoid(4).toUpperCase()}`;
     
+    // Process additional locations if they exist
+    let pickupLocationsJson = null;
+    let deliveryLocationsJson = null;
+    
+    if (extractedData.additionalPickups && extractedData.additionalPickups.length > 0) {
+      pickupLocationsJson = JSON.stringify(extractedData.additionalPickups.map((pickup, index) => ({
+        id: `pickup-${index + 1}`,
+        location: pickup.location,
+        address: pickup.address || "Not specified",
+        contactName: pickup.contactName,
+        contactPhone: pickup.contactPhone,
+        scheduledTime: pickup.scheduledTime,
+        instructions: pickup.instructions
+      })));
+    }
+    
+    if (extractedData.additionalDeliveries && extractedData.additionalDeliveries.length > 0) {
+      deliveryLocationsJson = JSON.stringify(extractedData.additionalDeliveries.map((delivery, index) => ({
+        id: `delivery-${index + 1}`,
+        location: delivery.location,
+        address: delivery.address || "Not specified",
+        contactName: delivery.contactName,
+        contactPhone: delivery.contactPhone,
+        scheduledTime: delivery.scheduledTime,
+        instructions: delivery.instructions
+      })));
+    }
+
     // Create load request
     const loadRequest = await storage.createLoadRequest({
       loadId,
@@ -306,6 +364,8 @@ export async function processRecordingWebhook(
       deliveryTime: extractedData.deliveryTime,
       deadline: extractedData.deadline,
       additionalNotes: extractedData.additionalNotes,
+      pickupLocations: pickupLocationsJson,
+      deliveryLocations: deliveryLocationsJson,
       status: "pending",
       transcription: actualTranscription,
       extractedData: JSON.stringify(extractedData),
