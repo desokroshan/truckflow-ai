@@ -74,6 +74,23 @@ interface ExtractedLoadInfo {
 
 export async function extractLoadInfo(transcription: string): Promise<ExtractedLoadInfo> {
   try {
+    // Import storage here to avoid circular dependency
+    const { storage } = await import('./storage');
+    
+    // Get configurable prompt from settings
+    const promptSetting = await storage.getSetting('ai_extraction_prompt');
+    const systemPrompt = promptSetting?.value || `Extract load information from this text and return valid JSON with these fields:
+customerName, customerPhone, pickupLocation, pickupAddress, pickupContactName, 
+pickupContactPhone, deliveryLocation, deliveryAddress, cargoType, weight, truckType, 
+pickupTime, deliveryTime, deadline, additionalNotes.
+
+NEW: Also extract additional pickup/delivery locations as arrays:
+- additionalPickups: Array of {location, address, contactName, contactPhone, scheduledTime, instructions}  
+- additionalDeliveries: Array of {location, address, contactName, contactPhone, scheduledTime, instructions}
+
+Extract actual phone numbers if mentioned. If no phone number is provided, use caller ID if available.
+Be precise and concise. Use "Not specified" for missing data. Empty arrays if no additional stops.`;
+    
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     // Optimized for faster processing
     const response = await getOpenAIClient().chat.completions.create({
@@ -81,56 +98,7 @@ export async function extractLoadInfo(transcription: string): Promise<ExtractedL
       messages: [
         {
           role: "system",
-          content: `Extract trucking load info from call transcripts. Return JSON:
-          {
-            "customerName": "string",
-            "customerPhone": "string", 
-            "pickupLocation": "primary pickup city, state",
-            "pickupAddress": "primary pickup address if given",
-            "pickupContactName": "contact person at primary pickup location if mentioned",
-            "pickupContactPhone": "contact phone at primary pickup location if mentioned",
-            "deliveryLocation": "primary delivery city, state",
-            "deliveryAddress": "primary delivery address if given",
-            "cargoType": "what's being shipped",
-            "weight": "weight with units",
-            "truckType": "Box Truck/Dry Van/Flatbed/Reefer/Step Deck/Lowboy",
-            "pickupTime": "pickup window if specified",
-            "deliveryTime": "delivery window if specified",
-            "deadline": "deadline if mentioned",
-            "additionalNotes": "special requirements",
-            "additionalPickups": [
-              {
-                "location": "city, state",
-                "address": "full address if given",
-                "contactName": "contact person if mentioned",
-                "contactPhone": "contact phone if mentioned", 
-                "scheduledTime": "pickup time if specified",
-                "instructions": "special instructions for this location"
-              }
-            ],
-            "additionalDeliveries": [
-              {
-                "location": "city, state",
-                "address": "full address if given",
-                "contactName": "contact person if mentioned",
-                "contactPhone": "contact phone if mentioned",
-                "scheduledTime": "delivery time if specified", 
-                "instructions": "special instructions for this location"
-              }
-            ]
-          }
-          
-          IMPORTANT: Look for multiple stops, such as:
-          - "pick up in Seattle, then Portland, then deliver to Phoenix and Las Vegas"
-          - "first pickup at warehouse A, second pickup at warehouse B"
-          - "deliver to three different locations"
-          - "make stops in Chicago, Detroit, then final delivery in Miami"
-          - "multi-stop route" or "several pickups/deliveries"
-          
-          Put the FIRST or PRIMARY pickup/delivery in the main fields. Put any ADDITIONAL stops in the arrays.
-          Look for pickup contact information like "ask for John", "contact Mary at pickup", "call Bob when you arrive", etc.
-          Extract actual phone numbers if mentioned. If no phone number is provided, use caller ID if available.
-          Be precise and concise. Use "Not specified" for missing data. Empty arrays if no additional stops.`
+          content: systemPrompt
         },
         {
           role: "user",

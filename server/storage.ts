@@ -685,8 +685,50 @@ export class MemStorage implements IStorage {
     this.settings.set("greeting_message", {
       id: this.currentSettingsId++,
       key: "greeting_message",
-      value: "Thank you for calling Expedite Transport. I'm Freya and I'll help you with your shipping request. Please describe your shipping needs including pickup location, delivery location, cargo type, and any special requirements. When finished, press pound or wait 2 seconds. This call is recorded.",
-      description: "Default greeting message for phone calls",
+      value: "Thank you for calling Expedite Transport! Please describe your shipping needs - pickup location, delivery location, and cargo details. Press pound when finished or wait 3 seconds after speaking.",
+      description: "Voice assistant greeting message for phone calls",
+      updatedAt: new Date()
+    });
+
+    this.settings.set("success_response", {
+      id: this.currentSettingsId++,
+      key: "success_response",
+      value: "Got it! Processing your load request now. You'll receive confirmation within 10 minutes. Thank you!",
+      description: "Success message after recording load request",
+      updatedAt: new Date()
+    });
+
+    this.settings.set("error_response", {
+      id: this.currentSettingsId++,
+      key: "error_response",
+      value: "I'm sorry, I didn't get that clearly. Please call back and speak clearly about your pickup location, delivery location, and cargo type. Thank you!",
+      description: "Error message when processing fails",
+      updatedAt: new Date()
+    });
+
+    this.settings.set("ai_extraction_prompt", {
+      id: this.currentSettingsId++,
+      key: "ai_extraction_prompt",
+      value: `Extract load information from this text and return valid JSON with these fields:
+customerName, customerPhone, pickupLocation, pickupAddress, pickupContactName, 
+pickupContactPhone, deliveryLocation, deliveryAddress, cargoType, weight, truckType, 
+pickupTime, deliveryTime, deadline, additionalNotes.
+
+NEW: Also extract additional pickup/delivery locations as arrays:
+- additionalPickups: Array of {location, address, contactName, contactPhone, scheduledTime, instructions}  
+- additionalDeliveries: Array of {location, address, contactName, contactPhone, scheduledTime, instructions}
+
+Extract actual phone numbers if mentioned. If no phone number is provided, use caller ID if available.
+Be precise and concise. Use "Not specified" for missing data. Empty arrays if no additional stops.`,
+      description: "AI prompt for extracting load information from text",
+      updatedAt: new Date()
+    });
+
+    this.settings.set("ai_summary_prompt", {
+      id: this.currentSettingsId++,
+      key: "ai_summary_prompt",
+      value: "Create concise load summary for trucking company owner. Include key details: customer, route, cargo, urgency.",
+      description: "AI prompt for generating load summaries",
       updatedAt: new Date()
     });
 
