@@ -1304,19 +1304,88 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Test PDF email processing endpoint for development
   app.post("/api/test-pdf-email", async (req, res) => {
     try {
-      const { fromAddress = "test@example.com" } = req.body;
+      const { fromAddress = "test@example.com", testMode } = req.body;
+      console.log("PDF test endpoint called with:", { fromAddress, testMode });
       
-      res.json({ 
-        message: "PDF email processing is ready",
-        capabilities: [
-          "Extract text from PDF attachments in emails",
-          "Combine PDF content with email text for AI processing",  
-          "Process load information from PDFs automatically",
-          "Handle multiple PDF attachments per email",
-          "Support for application/pdf and .pdf file extensions"
-        ],
-        usage: "Send emails with PDF attachments to the configured email address and the system will automatically extract and process the content."
-      });
+      if (testMode === "simulate") {
+        // Simulate processing an email with PDF attachment
+        const mockEmailContent = `
+Subject: Load Request - Chicago to Dallas Shipment
+
+Dear TruckFlow,
+
+Please find attached the load details for our upcoming shipment.
+
+Best regards,
+ABC Logistics
+`;
+
+        const mockPDFContent = `
+LOAD REQUEST DETAILS
+===================
+
+Pickup Location: Chicago, IL 60601
+Contact: John Smith
+Phone: (312) 555-0123
+Date: August 15, 2025
+Time: 8:00 AM
+
+Delivery Location: Dallas, TX 75201  
+Contact: Sarah Johnson
+Phone: (214) 555-0456
+Date: August 16, 2025
+Time: 2:00 PM
+
+Cargo: Electronics equipment
+Weight: 25,000 lbs
+Value: $150,000
+
+Special Instructions: Fragile items, require climate control
+`;
+
+        console.log("Simulating PDF email processing...");
+        
+        try {
+          // Combine email and PDF content as the email processing system would
+          const combinedContent = mockEmailContent + "\n\n=== PDF Content from load_details.pdf ===\n" + mockPDFContent + "\n=== End PDF Content ===\n";
+          console.log("Combined content length:", combinedContent.length);
+          
+          // Process with our email function (this would normally be called by IMAP)
+          await processIncomingEmail(
+            combinedContent,
+            fromAddress,
+            `test-${Date.now()}`
+          );
+          
+          res.json({
+            message: "PDF email processing simulation completed successfully",
+            simulation: {
+              emailContent: mockEmailContent,
+              pdfContent: mockPDFContent,
+              result: "Load request created from combined email and PDF content"
+            }
+          });
+        } catch (error) {
+          console.error("Simulation error:", error);
+          res.status(500).json({ error: "Simulation failed: " + (error instanceof Error ? error.message : String(error)) });
+        }
+        
+      } else {
+        res.json({ 
+          message: "PDF email processing is ready",
+          capabilities: [
+            "Extract text from PDF attachments in emails",
+            "Combine PDF content with email text for AI processing",  
+            "Process load information from PDFs automatically",
+            "Handle multiple PDF attachments per email",
+            "Support for application/pdf and .pdf file extensions"
+          ],
+          usage: "Send emails with PDF attachments to the configured email address and the system will automatically extract and process the content.",
+          testOptions: {
+            simulate: "Add 'testMode': 'simulate' to request body to run a simulation"
+          }
+        });
+      }
     } catch (error) {
       console.error("Error in PDF test endpoint:", error);
       res.status(500).json({ error: "Failed to process PDF email test" });
