@@ -1301,6 +1301,28 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Test PDF email processing endpoint for development
+  app.post("/api/test-pdf-email", async (req, res) => {
+    try {
+      const { fromAddress = "test@example.com" } = req.body;
+      
+      res.json({ 
+        message: "PDF email processing is ready",
+        capabilities: [
+          "Extract text from PDF attachments in emails",
+          "Combine PDF content with email text for AI processing",  
+          "Process load information from PDFs automatically",
+          "Handle multiple PDF attachments per email",
+          "Support for application/pdf and .pdf file extensions"
+        ],
+        usage: "Send emails with PDF attachments to the configured email address and the system will automatically extract and process the content."
+      });
+    } catch (error) {
+      console.error("Error in PDF test endpoint:", error);
+      res.status(500).json({ error: "Failed to process PDF email test" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -152,6 +152,48 @@ function generateEmailHash(emailContent: string, fromAddress: string, timestamp:
   return crypto.createHash('md5').update(hashInput).digest('hex');
 }
 
+// Extract text from PDF attachments
+async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
+  try {
+    // Dynamic import to avoid module loading issues
+    const pdfParse = await import('pdf-parse');
+    const parseFunction = pdfParse.default || pdfParse;
+    const data = await parseFunction(pdfBuffer);
+    console.log(`PDF parsed successfully, extracted ${data.text.length} characters`);
+    return data.text;
+  } catch (error) {
+    console.error('Error parsing PDF:', error);
+    return '';
+  }
+}
+
+// Process PDF attachments and extract load information
+async function processPDFAttachments(parsed: any): Promise<string> {
+  let pdfText = '';
+  
+  if (parsed.attachments && parsed.attachments.length > 0) {
+    console.log(`Found ${parsed.attachments.length} attachments`);
+    
+    for (const attachment of parsed.attachments) {
+      console.log(`Processing attachment: ${attachment.filename}, type: ${attachment.contentType}`);
+      
+      // Only process PDF attachments
+      if (attachment.contentType === 'application/pdf' || 
+          (attachment.filename && attachment.filename.toLowerCase().endsWith('.pdf'))) {
+        
+        console.log(`Processing PDF attachment: ${attachment.filename}`);
+        const extractedText = await extractTextFromPDF(attachment.content);
+        
+        if (extractedText.trim()) {
+          pdfText += `\n\n=== PDF Content from ${attachment.filename} ===\n${extractedText}\n=== End PDF Content ===\n`;
+        }
+      }
+    }
+  }
+  
+  return pdfText;
+}
+
 // Email monitoring functionality
 export async function processIncomingEmail(emailContent: string, fromAddress: string, messageId?: string): Promise<void> {
   try {
@@ -159,10 +201,17 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
     
     // Parse email content
     const parsed = await simpleParser(emailContent);
-    const emailText =
+    let emailText =
       typeof parsed.text === 'string' ? parsed.text :
       typeof parsed.html === 'string' ? parsed.html.replace(/<[^>]*>/g, '') :
       emailContent?.toString() || '';
+    
+    // Process PDF attachments and extract text
+    const pdfText = await processPDFAttachments(parsed);
+    if (pdfText) {
+      emailText = emailText + pdfText;
+      console.log(`Combined email text with PDF content (total length: ${emailText.length})`);
+    }
     
     // Create unique identifier for this email
     const emailHash = messageId || generateEmailHash(emailText, fromAddress, parsed.date?.toISOString() || new Date().toISOString());
@@ -259,7 +308,7 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       pickupLocations: pickupLocationsJson,
       deliveryLocations: deliveryLocationsJson,
       status: "pending",
-      transcription: `Email from: ${fromAddress}\nMessage ID: ${emailHash}\n\n${emailText}`,
+      transcription: `Email from: ${fromAddress}\nMessage ID: ${emailHash}\nHas PDF Attachments: ${pdfText ? 'Yes' : 'No'}\n\n${emailText}`,
       extractedData: JSON.stringify(extractedData),
       notificationSent: false,
     });
@@ -384,7 +433,7 @@ function fetchNewEmails() {
     }
 
     const fetch = imapClient.fetch(results, { 
-      bodies: 'HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID)',
+      bodies: '',  // Get full email body including attachments
       markSeen: true,
       envelope: true,
       struct: true

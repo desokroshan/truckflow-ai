@@ -31,8 +31,10 @@ TruckFlow AI is an AI-powered automation system for trucking businesses that pro
 
 ### Communication Layer
 - **Twilio Integration**: Handles incoming customer calls with webhook endpoints
+- **Email Processing**: Automated email intake with PDF attachment support for load information extraction
 - **Email Notifications**: NodeMailer with support for Gmail and Outlook
 - **SMS Notifications**: Twilio SMS for real-time alerts
+- **PDF Processing**: Automated text extraction from PDF attachments using pdf-parse library
 
 ### Fleet Management System
 - **Driver Management**: Track driver availability, qualifications, and assignments
@@ -50,13 +52,15 @@ TruckFlow AI is an AI-powered automation system for trucking businesses that pro
 ## Data Flow
 
 1. **Call Reception**: Customer calls are received via Twilio webhook
-2. **Recording Processing**: Audio recordings are transcribed using OpenAI Whisper
-3. **Data Extraction**: GPT-4 analyzes transcriptions to extract structured shipping data
-4. **Load Creation**: System creates load requests with extracted information
-5. **Notification**: Owner receives email/SMS notifications for new loads
-6. **Dashboard Review**: Load requests appear in dashboard for approval
-7. **Assignment**: Approved loads can be assigned to drivers and trucks
-8. **Integration**: Data can be synchronized with Google Sheets for record keeping
+2. **Email Reception**: Customer emails with load information (including PDF attachments) are processed
+3. **Recording Processing**: Audio recordings are transcribed using OpenAI Whisper  
+4. **PDF Processing**: PDF attachments are automatically parsed to extract text content
+5. **Data Extraction**: GPT-4 analyzes transcriptions, email content, and PDF text to extract structured shipping data
+6. **Load Creation**: System creates load requests with extracted information from multiple sources
+7. **Notification**: Owner receives email/SMS notifications for new loads
+8. **Dashboard Review**: Load requests appear in dashboard for approval
+9. **Assignment**: Approved loads can be assigned to drivers and trucks with availability tracking
+10. **Integration**: Data can be synchronized with Google Sheets for record keeping
 
 ## External Dependencies
 
@@ -106,9 +110,10 @@ Changelog:
 - July 30, 2025. Implemented multiple pickup and delivery locations support for Load Requests with enhanced UI components
 - August 8, 2025. Added configurable AI prompts system with tabbed dashboard interface for voice assistant and AI processing customization
 - August 8, 2025. Implemented manual driver scheduling system to track external assignments and manage driver availability
+- August 8, 2025. Added PDF attachment processing to email intake system for automated load information extraction from PDF documents
 
 ## Deployment Versions
-- **Latest:** v1.6.0 - Manual driver scheduling system, configurable AI prompts, enhanced driver availability tracking
+- **Latest:** v1.6.1 - PDF attachment processing, manual driver scheduling system, configurable AI prompts, enhanced driver availability tracking
 - **Previous:** v1.5.0 - Multiple pickup/delivery locations, comprehensive bug reporting system with Google Sheets integration
 
 ## User Preferences
