@@ -104,10 +104,12 @@ Changelog:
 - July 26, 2025. Added created date column to all load request dashboard tables and Google Sheets integration
 - July 30, 2025. Added comprehensive bug reporting system with Google Sheets integration and user-friendly dialog form
 - July 30, 2025. Implemented multiple pickup and delivery locations support for Load Requests with enhanced UI components
+- August 8, 2025. Added configurable AI prompts system with tabbed dashboard interface for voice assistant and AI processing customization
+- August 8, 2025. Implemented manual driver scheduling system to track external assignments and manage driver availability
 
 ## Deployment Versions
-- **Latest:** v1.5.0 - Multiple pickup/delivery locations, comprehensive bug reporting system with Google Sheets integration
-- **Previous:** v1.4.3 - Email duplicate prevention, recording retry mechanism, phone number fix, created date tracking
+- **Latest:** v1.6.0 - Manual driver scheduling system, configurable AI prompts, enhanced driver availability tracking
+- **Previous:** v1.5.0 - Multiple pickup/delivery locations, comprehensive bug reporting system with Google Sheets integration
 
 ## User Preferences
 

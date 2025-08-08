@@ -1,4 +1,4 @@
-import { users, loadRequests, callLogs, drivers, trucks, assignments, documents, settings, type User, type InsertUser, type LoadRequest, type InsertLoadRequest, type CallLog, type InsertCallLog, type Driver, type InsertDriver, type Truck, type InsertTruck, type Assignment, type InsertAssignment, type Document, type InsertDocument, type Settings, type InsertSettings } from "@shared/schema";
+import { users, loadRequests, callLogs, drivers, driverSchedules, trucks, assignments, documents, settings, type User, type InsertUser, type LoadRequest, type InsertLoadRequest, type CallLog, type InsertCallLog, type Driver, type InsertDriver, type DriverSchedule, type InsertDriverSchedule, type Truck, type InsertTruck, type Assignment, type InsertAssignment, type Document, type InsertDocument, type Settings, type InsertSettings } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -26,6 +26,16 @@ export interface IStorage {
   getAvailableDrivers(): Promise<Driver[]>;
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriverAvailability(id: number, isAvailable: boolean): Promise<Driver | undefined>;
+
+  // Driver Schedules
+  getDriverSchedule(id: number): Promise<DriverSchedule | undefined>;
+  getAllDriverSchedules(): Promise<DriverSchedule[]>;
+  getDriverSchedulesByDriverId(driverId: number): Promise<DriverSchedule[]>;
+  getActiveDriverSchedules(driverId: number): Promise<DriverSchedule[]>;
+  createDriverSchedule(schedule: InsertDriverSchedule): Promise<DriverSchedule>;
+  updateDriverSchedule(id: number, schedule: Partial<DriverSchedule>): Promise<DriverSchedule | undefined>;
+  deleteDriverSchedule(id: number): Promise<boolean>;
+  isDriverAvailableForPeriod(driverId: number, startDate: Date, endDate: Date): Promise<boolean>;
 
   // Trucks
   getTruck(id: number): Promise<Truck | undefined>;
@@ -63,6 +73,7 @@ export class MemStorage implements IStorage {
   private loadRequests: Map<number, LoadRequest>;
   private callLogs: Map<number, CallLog>;
   private drivers: Map<number, Driver>;
+  private driverSchedules: Map<number, DriverSchedule>;
   private trucks: Map<number, Truck>;
   private assignments: Map<number, Assignment>;
   private documents = new Map<number, Document>();
@@ -71,6 +82,7 @@ export class MemStorage implements IStorage {
   private currentLoadRequestId: number;
   private currentCallLogId: number;
   private currentDriverId: number;
+  private currentDriverScheduleId: number;
   private currentTruckId: number;
   private currentAssignmentId: number;
   private currentDocumentId = 1;
@@ -81,12 +93,14 @@ export class MemStorage implements IStorage {
     this.loadRequests = new Map();
     this.callLogs = new Map();
     this.drivers = new Map();
+    this.driverSchedules = new Map();
     this.trucks = new Map();
     this.assignments = new Map();
     this.currentUserId = 1;
     this.currentLoadRequestId = 1;
     this.currentCallLogId = 1;
     this.currentDriverId = 1;
+    this.currentDriverScheduleId = 1;
     this.currentTruckId = 1;
     this.currentAssignmentId = 1;
 
@@ -106,7 +120,11 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      createdAt: new Date(),
+    };
     this.users.set(id, user);
     return user;
   }
@@ -278,7 +296,17 @@ export class MemStorage implements IStorage {
   }
 
   async getAvailableDrivers(): Promise<Driver[]> {
-    return Array.from(this.drivers.values()).filter(driver => driver.isAvailable);
+    const allDrivers = Array.from(this.drivers.values()).filter(driver => driver.isAvailable);
+    const availableDrivers = [];
+    
+    for (const driver of allDrivers) {
+      const activeSchedules = await this.getActiveDriverSchedules(driver.id);
+      if (activeSchedules.length === 0) {
+        availableDrivers.push(driver);
+      }
+    }
+    
+    return availableDrivers;
   }
 
   async createDriver(insertDriver: InsertDriver): Promise<Driver> {
@@ -302,6 +330,79 @@ export class MemStorage implements IStorage {
     };
     this.drivers.set(id, updated);
     return updated;
+  }
+
+  // Driver Schedule methods
+  async getDriverSchedule(id: number): Promise<DriverSchedule | undefined> {
+    return this.driverSchedules.get(id);
+  }
+
+  async getAllDriverSchedules(): Promise<DriverSchedule[]> {
+    return Array.from(this.driverSchedules.values()).sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+  }
+
+  async getDriverSchedulesByDriverId(driverId: number): Promise<DriverSchedule[]> {
+    return Array.from(this.driverSchedules.values())
+      .filter(schedule => schedule.driverId === driverId)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  }
+
+  async getActiveDriverSchedules(driverId: number): Promise<DriverSchedule[]> {
+    const now = new Date();
+    return Array.from(this.driverSchedules.values())
+      .filter(schedule => 
+        schedule.driverId === driverId && 
+        schedule.status === 'scheduled' &&
+        new Date(schedule.startDate) <= now && 
+        new Date(schedule.endDate) >= now
+      );
+  }
+
+  async createDriverSchedule(insertSchedule: InsertDriverSchedule): Promise<DriverSchedule> {
+    const id = this.currentDriverScheduleId++;
+    const schedule: DriverSchedule = {
+      ...insertSchedule,
+      id,
+      status: insertSchedule.status || "scheduled",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.driverSchedules.set(id, schedule);
+    return schedule;
+  }
+
+  async updateDriverSchedule(id: number, scheduleUpdate: Partial<DriverSchedule>): Promise<DriverSchedule | undefined> {
+    const schedule = this.driverSchedules.get(id);
+    if (!schedule) return undefined;
+
+    const updated: DriverSchedule = {
+      ...schedule,
+      ...scheduleUpdate,
+      updatedAt: new Date(),
+    };
+    this.driverSchedules.set(id, updated);
+    return updated;
+  }
+
+  async deleteDriverSchedule(id: number): Promise<boolean> {
+    return this.driverSchedules.delete(id);
+  }
+
+  async isDriverAvailableForPeriod(driverId: number, startDate: Date, endDate: Date): Promise<boolean> {
+    const schedules = await this.getDriverSchedulesByDriverId(driverId);
+    
+    // Check if there's any conflicting schedule
+    return !schedules.some(schedule => {
+      if (schedule.status === 'cancelled') return false;
+      
+      const scheduleStart = new Date(schedule.startDate);
+      const scheduleEnd = new Date(schedule.endDate);
+      
+      // Check for overlap
+      return startDate < scheduleEnd && endDate > scheduleStart;
+    });
   }
 
   // Truck methods

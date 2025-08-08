@@ -972,6 +972,88 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Driver Schedule routes
+  app.get("/api/driver-schedules", async (req, res) => {
+    try {
+      const schedules = await storage.getAllDriverSchedules();
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching driver schedules:", error);
+      res.status(500).json({ error: "Failed to fetch driver schedules" });
+    }
+  });
+
+  app.get("/api/driver-schedules/driver/:driverId", async (req, res) => {
+    try {
+      const { driverId } = req.params;
+      const schedules = await storage.getDriverSchedulesByDriverId(parseInt(driverId));
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching driver schedules:", error);
+      res.status(500).json({ error: "Failed to fetch driver schedules" });
+    }
+  });
+
+  app.post("/api/driver-schedules", async (req, res) => {
+    try {
+      const schedule = await storage.createDriverSchedule(req.body);
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error creating driver schedule:", error);
+      res.status(500).json({ error: "Failed to create driver schedule" });
+    }
+  });
+
+  app.put("/api/driver-schedules/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const schedule = await storage.updateDriverSchedule(parseInt(id), req.body);
+      if (!schedule) {
+        return res.status(404).json({ error: "Driver schedule not found" });
+      }
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error updating driver schedule:", error);
+      res.status(500).json({ error: "Failed to update driver schedule" });
+    }
+  });
+
+  app.delete("/api/driver-schedules/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteDriverSchedule(parseInt(id));
+      if (!success) {
+        return res.status(404).json({ error: "Driver schedule not found" });
+      }
+      res.json({ message: "Driver schedule deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting driver schedule:", error);
+      res.status(500).json({ error: "Failed to delete driver schedule" });
+    }
+  });
+
+  app.get("/api/drivers/:driverId/availability", async (req, res) => {
+    try {
+      const { driverId } = req.params;
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Start date and end date are required" });
+      }
+
+      const isAvailable = await storage.isDriverAvailableForPeriod(
+        parseInt(driverId), 
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      
+      res.json({ isAvailable });
+    } catch (error) {
+      console.error("Error checking driver availability:", error);
+      res.status(500).json({ error: "Failed to check driver availability" });
+    }
+  });
+
   // Trucks routes
   app.get("/api/trucks", async (req, res) => {
     try {

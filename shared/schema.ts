@@ -74,6 +74,20 @@ export const drivers = pgTable("drivers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const driverSchedules = pgTable("driver_schedules", {
+  id: serial("id").primaryKey(),
+  driverId: integer("driver_id").references(() => drivers.id).notNull(),
+  loadId: text("load_id"), // External load ID (can be null for manual schedule blocks)
+  title: text("title").notNull(), // Description of the assignment
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
+  isExternalAssignment: boolean("is_external_assignment").default(false), // True for loads assigned outside the app
+  notes: text("notes"), // Additional notes about the assignment
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const trucks = pgTable("trucks", {
   id: serial("id").primaryKey(),
   truckNumber: text("truck_number").notNull().unique(),
@@ -186,6 +200,7 @@ export type User = typeof users.$inferSelect;
 export type LoadRequest = typeof loadRequests.$inferSelect;
 export type CallLog = typeof callLogs.$inferSelect;
 export type Driver = typeof drivers.$inferSelect;
+export type DriverSchedule = typeof driverSchedules.$inferSelect;
 export type Truck = typeof trucks.$inferSelect;
 export type Assignment = typeof assignments.$inferSelect;
 export type Document = typeof documents.$inferSelect;
@@ -226,6 +241,12 @@ export const insertDriverSchema = createInsertSchema(drivers).omit({
   createdAt: true,
 });
 
+export const insertDriverScheduleSchema = createInsertSchema(driverSchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertTruckSchema = createInsertSchema(trucks).omit({
   id: true,
   createdAt: true,
@@ -240,6 +261,7 @@ export type LoginData = z.infer<typeof loginSchema>;
 export type SignupData = z.infer<typeof signupSchema>;
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
+export type InsertDriverSchedule = z.infer<typeof insertDriverScheduleSchema>;
 export type InsertTruck = z.infer<typeof insertTruckSchema>;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
