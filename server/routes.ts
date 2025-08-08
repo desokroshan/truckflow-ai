@@ -26,7 +26,7 @@ const upload = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only audio files are allowed.'), false);
+      cb(new Error('Invalid file type. Only audio files are allowed.'));
     }
   },
   limits: {
@@ -703,6 +703,16 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
       // Send notification about flagged load
       try {
         await sendOwnerNotification(
+          {
+            loadId: updatedLoadRequest.loadId,
+            customerName: updatedLoadRequest.customerName || "Unknown",
+            pickupLocation: updatedLoadRequest.pickupLocation || "Not specified",
+            deliveryLocation: updatedLoadRequest.deliveryLocation || "Not specified",
+            pickupTime: updatedLoadRequest.pickupTime || "Not specified",
+            cargoType: updatedLoadRequest.cargoType || "Not specified",
+            weight: updatedLoadRequest.weight || "Not specified",
+            additionalNotes: `Flagged for missing details: ${flagData.missingFields.join(', ')}. Notes: ${flagData.validationNotes}`
+          },
           `Load Request Flagged for Review`,
           `Load ${updatedLoadRequest.loadId} has been flagged for missing details:\n\n` +
           `Missing Fields: ${flagData.missingFields.join(', ')}\n` +
