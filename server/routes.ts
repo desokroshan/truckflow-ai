@@ -1311,6 +1311,61 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  // Test OpenAI PDF parsing directly
+  app.post("/api/test-openai-pdf", async (req, res) => {
+    try {
+      const { testContent } = req.body;
+      const mockPDFContent = testContent || `
+LOAD REQUEST DETAILS
+===================
+
+Customer: XYZ Shipping Corp
+Phone: (555) 123-4567
+
+Pickup Location: Los Angeles, CA 90210
+Contact: Mike Davis  
+Phone: (310) 555-0199
+Date: August 20, 2025
+Time: 10:00 AM
+Address: 1234 Industrial Blvd, Los Angeles, CA 90210
+
+Delivery Location: Phoenix, AZ 85001
+Contact: Lisa Chen
+Phone: (602) 555-0288
+Date: August 21, 2025  
+Time: 3:00 PM
+Address: 5678 Commerce St, Phoenix, AZ 85001
+
+Cargo: Automotive parts
+Weight: 18,500 lbs
+Equipment needed: 53ft Dry Van
+Value: $85,000
+
+Special Instructions: Handle with care, temperature sensitive items
+Deadline: Must arrive by 5:00 PM on August 21st
+`;
+
+      console.log("Testing OpenAI PDF content parsing directly...");
+      
+      // Import and use the PDF parsing function directly
+      const { extractAndParsePDF } = await import('./email');
+      const mockPDFBuffer = Buffer.from(mockPDFContent, 'utf8');
+      
+      // Test the OpenAI parsing function directly
+      const result = await extractAndParsePDF(mockPDFBuffer, 'test_load.pdf');
+      
+      res.json({
+        message: "OpenAI PDF parsing test completed",
+        input: mockPDFContent,
+        result: result,
+        success: !!result
+      });
+    } catch (error) {
+      console.error("OpenAI PDF test error:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
   // Test PDF email processing endpoint for development
   app.post("/api/test-pdf-email", async (req, res) => {
     try {
@@ -1356,13 +1411,31 @@ Special Instructions: Fragile items, require climate control
         console.log("Simulating PDF email processing...");
         
         try {
-          // Combine email and PDF content as the email processing system would
-          const combinedContent = mockEmailContent + "\n\n=== PDF Content from load_details.pdf ===\n" + mockPDFContent + "\n=== End PDF Content ===\n";
-          console.log("Combined content length:", combinedContent.length);
+          // Create a proper email structure with PDF attachment simulation
+          const mockEmail = `From: ${fromAddress}
+To: support@truckflow.ai
+Subject: Load Request - Chicago to Dallas Shipment
+Date: ${new Date().toISOString()}
+
+${mockEmailContent}`;
+
+          // Use simpleParser to create proper email structure
+          const { simpleParser } = await import('mailparser');
+          const parsed = await simpleParser(mockEmail);
           
-          // Process with our email function (this would normally be called by IMAP)
+          // Mock PDF attachment data
+          const mockPDFBuffer = Buffer.from(mockPDFContent, 'utf8');
+          parsed.attachments = [{
+            filename: 'load_details.pdf',
+            contentType: 'application/pdf',
+            content: mockPDFBuffer
+          }];
+
+          console.log("Testing OpenAI PDF processing with mock attachment...");
+          
+          // Process with our email function using the actual PDF processing logic
           await processIncomingEmail(
-            combinedContent,
+            mockEmail,
             fromAddress,
             `test-${Date.now()}`
           );

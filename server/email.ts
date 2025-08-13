@@ -152,24 +152,46 @@ function generateEmailHash(emailContent: string, fromAddress: string, timestamp:
   return crypto.createHash('md5').update(hashInput).digest('hex');
 }
 
-// Extract text from PDF attachments
-async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
+// Extract and parse PDF content using OpenAI
+export async function extractAndParsePDF(pdfBuffer: Buffer, filename: string): Promise<any> {
   try {
-    // Dynamic import to avoid module loading issues
+    // First extract raw text using pdf-parse
     const pdfParse = await import('pdf-parse');
     const parseFunction = pdfParse.default || pdfParse;
     const data = await parseFunction(pdfBuffer);
-    console.log(`PDF parsed successfully, extracted ${data.text.length} characters`);
-    return data.text;
+    const rawText = data.text;
+    console.log(`PDF text extracted from ${filename}: ${rawText.length} characters`);
+    
+    if (!rawText.trim()) {
+      console.log(`No text content found in PDF: ${filename}`);
+      return null;
+    }
+
+    // Use OpenAI to parse the PDF content and extract structured load information
+    const { extractLoadInfo } = await import('./openai');
+    const extractedData = await extractLoadInfo(rawText);
+    console.log(`OpenAI parsed PDF ${filename}:`, JSON.stringify(extractedData, null, 2));
+    
+    return {
+      rawText,
+      extractedData,
+      filename
+    };
   } catch (error) {
-    console.error('Error parsing PDF:', error);
-    return '';
+    console.error(`Error parsing PDF ${filename} with OpenAI:`, error);
+    return null;
   }
 }
 
-// Process PDF attachments and extract load information
-async function processPDFAttachments(parsed: any): Promise<string> {
-  let pdfText = '';
+// Process PDF attachments using OpenAI for structured data extraction
+async function processPDFAttachments(parsed: any): Promise<{
+  combinedText: string;
+  extractedDataList: any[];
+  pdfCount: number;
+}> {
+  let combinedText = '';
+  const extractedDataList: any[] = [];
+  let pdfCount = 0;
   
   if (parsed.attachments && parsed.attachments.length > 0) {
     console.log(`Found ${parsed.attachments.length} attachments`);
@@ -181,17 +203,27 @@ async function processPDFAttachments(parsed: any): Promise<string> {
       if (attachment.contentType === 'application/pdf' || 
           (attachment.filename && attachment.filename.toLowerCase().endsWith('.pdf'))) {
         
-        console.log(`Processing PDF attachment: ${attachment.filename}`);
-        const extractedText = await extractTextFromPDF(attachment.content);
+        console.log(`Processing PDF attachment with OpenAI: ${attachment.filename}`);
+        const pdfData = await extractAndParsePDF(attachment.content, attachment.filename);
         
-        if (extractedText.trim()) {
-          pdfText += `\n\n=== PDF Content from ${attachment.filename} ===\n${extractedText}\n=== End PDF Content ===\n`;
+        if (pdfData) {
+          pdfCount++;
+          combinedText += `\n\n=== PDF Content from ${attachment.filename} ===\n${pdfData.rawText}\n=== End PDF Content ===\n`;
+          extractedDataList.push({
+            filename: attachment.filename,
+            extractedData: pdfData.extractedData,
+            rawText: pdfData.rawText
+          });
         }
       }
     }
   }
   
-  return pdfText;
+  return {
+    combinedText,
+    extractedDataList,
+    pdfCount
+  };
 }
 
 // Email monitoring functionality
@@ -206,11 +238,11 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       typeof parsed.html === 'string' ? parsed.html.replace(/<[^>]*>/g, '') :
       emailContent?.toString() || '';
     
-    // Process PDF attachments and extract text
-    const pdfText = await processPDFAttachments(parsed);
-    if (pdfText) {
-      emailText = emailText + pdfText;
-      console.log(`Combined email text with PDF content (total length: ${emailText.length})`);
+    // Process PDF attachments using OpenAI
+    const pdfResults = await processPDFAttachments(parsed);
+    if (pdfResults.combinedText) {
+      emailText = emailText + pdfResults.combinedText;
+      console.log(`Combined email text with ${pdfResults.pdfCount} PDF(s) (total length: ${emailText.length})`);
     }
     
     // Create unique identifier for this email
@@ -234,9 +266,33 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
     
     console.log(`Final email text for processing: ${emailText.slice(0, 200)}...`);
     
-    // Use AI to extract load information from email
-    const extractedData = await extractLoadInfo(emailText);
-    console.log(`Extracted load information:`, JSON.stringify(extractedData, null, 2));
+    // Combine PDF extracted data with email analysis
+    let extractedData;
+    if (pdfResults.extractedDataList.length > 0) {
+      // Use PDF extracted data as primary source, supplement with email analysis
+      console.log(`Found ${pdfResults.extractedDataList.length} PDF(s) with extracted data`);
+      extractedData = pdfResults.extractedDataList[0].extractedData; // Use first PDF as primary
+      
+      // Enhance with email analysis if needed
+      const emailExtractedData = await extractLoadInfo(emailText);
+      
+      // Merge data, prioritizing PDF data but filling gaps with email data
+      extractedData = {
+        ...emailExtractedData,
+        ...extractedData, // PDF data takes precedence
+        // Combine notes from both sources
+        additionalNotes: [
+          extractedData.additionalNotes,
+          emailExtractedData.additionalNotes
+        ].filter(Boolean).join('; ')
+      };
+      
+      console.log(`Combined PDF and email extracted data:`, JSON.stringify(extractedData, null, 2));
+    } else {
+      // No PDFs found, use standard email analysis
+      extractedData = await extractLoadInfo(emailText);
+      console.log(`Email-only extracted load information:`, JSON.stringify(extractedData, null, 2));
+    }
     
     // Only create load request if we have meaningful pickup/delivery information
     if (!extractedData.pickupLocation && !extractedData.deliveryLocation) {
@@ -308,7 +364,7 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
       pickupLocations: pickupLocationsJson,
       deliveryLocations: deliveryLocationsJson,
       status: "pending",
-      transcription: `Email from: ${fromAddress}\nMessage ID: ${emailHash}\nHas PDF Attachments: ${pdfText ? 'Yes' : 'No'}\n\n${emailText}`,
+      transcription: `Email from: ${fromAddress}\nMessage ID: ${emailHash}\nPDF Attachments: ${pdfResults.pdfCount}\nProcessed with OpenAI: ${pdfResults.extractedDataList.length > 0 ? 'Yes' : 'No'}\n\n${emailText}`,
       extractedData: JSON.stringify(extractedData),
       notificationSent: false,
     });
