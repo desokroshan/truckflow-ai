@@ -1,0 +1,43 @@
+Error extracting load info from PDF D4K2pu_1066544.pdf: RateLimitError: 429 Request too large for gpt-4o in organization org-PWclI1z7DqdOvSjdTpYW2srd on tokens per min (TPM): Limit 30000, Requested 90365. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.
+    at Function.generate (/Users/roshankumar/workspace/truckflow-ai/node_modules/openai/src/error.ts:96:14)
+    at OpenAI.makeStatusError (/Users/roshankumar/workspace/truckflow-ai/node_modules/openai/src/core.ts:462:21)
+    at OpenAI.makeRequest (/Users/roshankumar/workspace/truckflow-ai/node_modules/openai/src/core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async extractLoadInfoFromPDF (/Users/roshankumar/workspace/truckflow-ai/server/openai.ts:119:22)
+    at async extractAndParsePDF (/Users/roshankumar/workspace/truckflow-ai/server/email.ts:167:27)
+    at async processPDFAttachments (/Users/roshankumar/workspace/truckflow-ai/server/email.ts:208:25)
+    at async processIncomingEmail (/Users/roshankumar/workspace/truckflow-ai/server/email.ts:243:24) {
+  status: 429,
+  headers: {
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '96e4eb574ec2090f-SEA',
+    connection: 'keep-alive',
+    'content-length': '405',
+    'content-type': 'application/json; charset=utf-8',
+    date: 'Wed, 13 Aug 2025 02:52:57 GMT',
+    server: 'cloudflare',
+    'set-cookie': '_cfuvid=hUHIXsdBmozNKqgwOwXKvLl4s.RcQoqvY.b9uONfnQs-1755053577347-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    vary: 'Origin',
+    'x-content-type-options': 'nosniff',
+    'x-envoy-upstream-service-time': '34',
+    'x-ratelimit-limit-requests': '500',
+    'x-ratelimit-limit-tokens': '30000',
+    'x-ratelimit-remaining-requests': '499',
+    'x-ratelimit-remaining-tokens': '29999',
+    'x-ratelimit-reset-requests': '120ms',
+    'x-ratelimit-reset-tokens': '0s',
+    'x-request-id': 'req_f5c046010b68446b8a3697384012ce33'
+  },
+  request_id: 'req_f5c046010b68446b8a3697384012ce33',
+  error: {
+    message: 'Request too large for gpt-4o in organization org-PWclI1z7DqdOvSjdTpYW2srd on tokens per min (TPM): Limit 30000, Requested 90365. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.',
+    type: 'tokens',
+    param: null,
+    code: 'rate_limit_exceeded'
+  },
+  code: 'rate_limit_exceeded',
+  param: null,
+  type: 'tokens'
+}
