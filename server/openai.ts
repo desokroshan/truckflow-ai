@@ -72,16 +72,92 @@ interface ExtractedLoadInfo {
   }>;
 }
 
+// Function to extract relevant sections and clean PDF text for optimal processing
+function extractRelevantSectionsFromPDF(pdfText: string, maxTokens: number = 15000): string {
+  // Keywords that indicate shipping/logistics information
+  const relevantKeywords = [
+    'customer', 'pickup', 'delivery', 'shipper', 'consignee', 'origin', 'destination',
+    'cargo', 'freight', 'weight', 'equipment', 'truck', 'trailer', 'contact', 'phone',
+    'address', 'location', 'date', 'time', 'schedule', 'load', 'shipment', 'order',
+    'bill of lading', 'bol', 'po number', 'purchase order', 'dimensions', 'hazmat',
+    'special instructions', 'handling', 'temperature', 'refrigerated', 'dry van'
+  ];
+
+  // Split into lines and score each line based on relevance
+  const lines = pdfText.split('\n');
+  const scoredLines = lines.map(line => {
+    const lowerLine = line.toLowerCase();
+    let score = 0;
+    
+    // Score based on keyword presence
+    relevantKeywords.forEach(keyword => {
+      if (lowerLine.includes(keyword)) {
+        score += keyword.length; // Longer keywords get higher priority
+      }
+    });
+    
+    // Boost score for lines with contact info patterns
+    if (/\(\d{3}\)\s*\d{3}-\d{4}/.test(line)) score += 20; // Phone numbers
+    if (/\d+\s+[A-Za-z\s]+\s+(St|Ave|Rd|Dr|Blvd|Way|Ln|Ct)/i.test(line)) score += 15; // Addresses
+    if (/\b[A-Z]{2}\s+\d{5}/.test(line)) score += 10; // State and ZIP
+    if (/\d+\s*(lbs?|pounds?|tons?|kg)/i.test(line)) score += 15; // Weight info
+    if (/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(line)) score += 10; // Dates
+    
+    return { line: line.trim(), score, originalIndex: lines.indexOf(line) };
+  });
+
+  // Sort by score and keep the most relevant lines
+  const relevantLines = scoredLines
+    .filter(item => item.score > 0 || item.line.length > 20) // Keep scored lines or substantial content
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.min(100, scoredLines.length)); // Keep top 100 lines max
+
+  // Sort back by original order to maintain document structure
+  relevantLines.sort((a, b) => a.originalIndex - b.originalIndex);
+
+  // Join and clean the extracted content
+  let extractedText = relevantLines.map(item => item.line).join('\n');
+  
+  // Clean up excessive whitespace
+  extractedText = extractedText
+    .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+    .replace(/\n\s*\n/g, '\n')  // Remove empty lines
+    .trim();
+
+  // Estimate tokens (roughly 4 characters per token)
+  const estimatedTokens = extractedText.length / 4;
+  
+  if (estimatedTokens <= maxTokens) {
+    return extractedText;
+  }
+
+  // If still too long, truncate smartly
+  const maxCharacters = maxTokens * 4;
+  const truncatedText = extractedText.substring(0, maxCharacters);
+  
+  // Try to end at a complete word
+  const lastSpaceIndex = truncatedText.lastIndexOf(' ');
+  if (lastSpaceIndex > maxCharacters * 0.9) {
+    return truncatedText.substring(0, lastSpaceIndex) + '\n\n[Content truncated for processing]';
+  }
+  
+  return truncatedText + '\n\n[Content truncated for processing]';
+}
+
 // Extract load information directly from PDF text using OpenAI text processing
 export async function extractLoadInfoFromPDF(pdfText: string, filename: string): Promise<ExtractedLoadInfo | null> {
   try {
-    console.log(`Using OpenAI to process PDF text content: ${filename}`);
+    console.log(`Using OpenAI to process PDF text content: ${filename} (original length: ${pdfText.length} chars)`);
+    
+    // Extract relevant sections and optimize the PDF text to prevent token limit issues
+    const processedText = extractRelevantSectionsFromPDF(pdfText, 12000); // Conservative limit
+    console.log(`Processed text length: ${processedText.length} chars (estimated ${Math.ceil(processedText.length / 4)} tokens)`);
     
     const prompt = `You are a logistics AI assistant that extracts shipping information from PDF document text content. 
 
 Analyze the following PDF text content and extract all relevant shipping/load information:
 
-${pdfText}
+${processedText}
 
 Look for:
 - Customer/shipper information (name, phone, email)
@@ -135,6 +211,12 @@ If there are multiple pickup or delivery locations, include them in the addition
     return extractedData as ExtractedLoadInfo;
   } catch (error) {
     console.error(`Error extracting load info from PDF ${filename}:`, error);
+    
+    // If it's a rate limit error, provide more specific guidance
+    if (error.code === 'rate_limit_exceeded') {
+      console.error('PDF content is too large for OpenAI processing. Consider splitting large PDFs or implementing chunked processing.');
+    }
+    
     return null;
   }
 }
