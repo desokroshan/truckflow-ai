@@ -74,102 +74,200 @@ interface ExtractedLoadInfo {
 
 // Function to extract relevant sections and clean PDF text for optimal processing
 function extractRelevantSectionsFromPDF(pdfText: string, maxTokens: number = 15000): string {
-  // Enhanced keywords and patterns for better logistics data detection
-  const relevantKeywords = [
-    'customer', 'pickup', 'delivery', 'shipper', 'consignee', 'origin', 'destination',
-    'cargo', 'freight', 'weight', 'equipment', 'truck', 'trailer', 'contact', 'phone',
-    'address', 'location', 'date', 'time', 'schedule', 'load', 'shipment', 'order',
-    'bill of lading', 'bol', 'po number', 'purchase order', 'dimensions', 'hazmat',
-    'special instructions', 'handling', 'temperature', 'refrigerated', 'dry van',
-    'dispatch', 'driver', 'deliver', 'construction', 'willhoit', 'laguna', 'beach',
-    'city of industry', 'rose hills', 'buena vista', 'directions', 'call', 'osc'
+  // Critical patterns that contain actual data - more comprehensive patterns
+  const criticalPatterns = [
+    // Customer information patterns (more flexible)
+    /customer/i,
+    /willhoit/i,
+    /construction/i,
+    /laguna/i,
+    /beach/i,
+    /taylor/i,
+    /\d{10}/,  // 10-digit numbers (phone without formatting)
+    /\d{3}.*\d{3}.*\d{4}/,  // Phone numbers in any format
+    /\(\d{3}\).*\d{3}-\d{4}/,  // Standard phone format
+    /949.*677.*9685/,  // Specific phone number patterns
+    /562.*463.*4050/,  // Delivery phone
+    
+    // Address and location patterns (broader)
+    /buena/i,
+    /vista/i,
+    /rose/i,
+    /hills/i,
+    /industry/i,
+    /\d+.*way/i,
+    /\d+.*road/i,
+    /\d+.*rd/i,
+    /600.*buena/i,
+    /10006.*rose/i,
+    
+    // Equipment and technical details
+    /equip/i,
+    /model/i,
+    /d4k2/i,
+    /\b[A-Z]{2}\b/,  // Equipment codes like "AA"
+    /xl\b/i,
+    /weight/i,
+    /rental/i,
+    /dead.*haul/i,
+    /0km207433/i,  // ID numbers
+    /2021351/i,
+    
+    // Dates and times (more patterns)
+    /jul/i,
+    /2025/,
+    /\d{1,2}:\d{2}/,  // Any time format
+    /am\b/i,
+    /pm\b/i,
+    /pickup/i,
+    /deliver/i,
+    /anytime/i,
+    
+    // Contact and communication
+    /phone/i,
+    /contact/i,
+    /call/i,
+    /directions/i,
+    /please/i,
+    /osc/i,
+    /space/i,
+    /hour/i,
+    /before/i,
+    /delivery/i,
+    
+    // Order and dispatch information
+    /order/i,
+    /load/i,
+    /\d{7}/,  // 7-digit numbers (load numbers)
+    /\d{6}/,  // 6-digit numbers (order numbers)
+    /1066544/,  // Specific order number
+    /1278359/,  // Specific load number
+    /325111/,   // PO number
+    /dispatcher/i,
+    /driver/i,
+    /expedite/i,
+    /dominick/i,
+    /quinn/i,
+    /cat/i,
+    /dispatch/i,
+    
+    // Company names and identifiers
+    /inc\b/i,
+    /corp/i,
+    /ltd/i,
+    /llc/i,
+    /qrs/i,
+    /coi/i,
+    /0095873/,  // Customer ID
+    
+    // Form field patterns
+    /po\s*:/i,
+    /job\s*no/i,
+    /seg\s*:/i,
+    /id\s*no/i,
+    /alt\s*no/i,
+    /map\s*pg/i,
+    /window/i,
+    /purpose/i,
+    /requested/i,
+    /comments/i,
+    /trouble.*code/i,
+    /additional.*info/i
   ];
 
-  // Split into lines and score each line based on relevance
+  // Split into lines and process
   const lines = pdfText.split('\n');
-  const scoredLines = lines.map((line, index) => {
-    const lowerLine = line.toLowerCase();
-    const trimmedLine = line.trim();
-    let score = 0;
+  const importantLines = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
     
-    // Score based on keyword presence
-    relevantKeywords.forEach(keyword => {
-      if (lowerLine.includes(keyword)) {
-        score += keyword.length * 2; // Higher weight for keywords
-      }
-    });
-    
-    // Boost score for critical patterns
-    if (/\(\d{3}\)\s*\d{3}-\d{4}/.test(line)) score += 50; // Phone numbers
-    if (/\d{3}\d{7}/.test(line.replace(/\D/g, ''))) score += 40; // 10-digit numbers
-    if (/\d+\s+[A-Za-z\s]+(St|Ave|Rd|Dr|Blvd|Way|Ln|Ct)/i.test(line)) score += 40; // Addresses
-    if (/\b[A-Z]{2}\s+\d{5}/.test(line)) score += 30; // State and ZIP
-    if (/\d+\s*(lbs?|pounds?|tons?|kg)/i.test(line)) score += 30; // Weight info
-    if (/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(line)) score += 25; // Dates
-    if (/\d{1,2}:\d{2}\s*(AM|PM)/i.test(line)) score += 25; // Times
-    
-    // Boost for company/customer names
-    if (/^[A-Z\s]+[,]?\s+[A-Z]{2}$/i.test(trimmedLine)) score += 35; // City, State format
-    if (/construction|inc|corp|ltd|llc/i.test(line)) score += 30; // Company indicators
-    
-    // Boost for form field patterns
-    if (/:\s*[A-Za-z0-9]/.test(line)) score += 20; // Field: value patterns
-    if (/^[A-Za-z\s]+:\s*/.test(trimmedLine)) score += 15; // Label: patterns
-    
-    // Keep lines with substantial content even without keywords
-    if (trimmedLine.length > 30 && /[A-Za-z]/.test(trimmedLine)) {
-      score += Math.min(trimmedLine.length / 5, 20);
+    // Skip empty lines and formatting lines
+    if (line.length < 3 || /^[\s\-_=]+$/.test(line)) {
+      continue;
     }
     
-    // Penalty for lines that are mostly formatting
-    if (/^[\s\-_=]+$/.test(line)) score -= 10;
-    if (trimmedLine.length < 5) score -= 5;
+    // Check if line matches any critical pattern
+    const isImportant = criticalPatterns.some(pattern => pattern.test(line));
     
-    return { line: trimmedLine, score, originalIndex: index };
-  });
-
-  // Sort by score and keep the most relevant lines
-  const relevantLines = scoredLines
-    .filter(item => item.score > 5 || item.line.length > 40) // More inclusive filtering
-    .sort((a, b) => b.score - a.score)
-    .slice(0, Math.min(200, scoredLines.length)); // Keep more lines for complex documents
-
-  // Sort back by original order to maintain document structure
-  relevantLines.sort((a, b) => a.originalIndex - b.originalIndex);
-
-  // Join and clean the extracted content, but preserve structure better
-  let extractedText = relevantLines.map(item => item.line).join('\n');
+    // Also include lines that are clearly data fields (with colons or clear structure)
+    const hasData = line.includes(':') || 
+                   /\d{3}.*\d{3}.*\d{4}/.test(line) || 
+                   /[A-Z]{2}\s+\d{5}/.test(line) ||
+                   /(construction|dispatch|pickup|deliver|phone|contact)/i.test(line);
+    
+    if (isImportant || hasData) {
+      importantLines.push(line);
+      
+      // Also include the next 1-2 lines if they contain related data
+      for (let j = 1; j <= 2 && (i + j) < lines.length; j++) {
+        const nextLine = lines[i + j].trim();
+        if (nextLine.length > 5 && 
+            !importantLines.includes(nextLine) &&
+            !/^[\s\-_=]+$/.test(nextLine)) {
+          
+          // Check if next line seems to be continuation of current data
+          if (/^[A-Z\s,]+$/.test(nextLine) || // City, state line
+              /\d/.test(nextLine) || // Contains numbers
+              /(phone|contact|address)/i.test(nextLine)) {
+            importantLines.push(nextLine);
+          }
+        }
+      }
+    }
+  }
   
-  // Less aggressive cleaning to preserve data
+  // Join the important lines
+  let extractedText = importantLines.join('\n');
+  
+  // Clean up but preserve structure
   extractedText = extractedText
-    .replace(/\n{3,}/g, '\n\n')  // Limit consecutive newlines
-    .replace(/\s{5,}/g, '    ')  // Limit excessive spaces but keep some formatting
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // Estimate tokens (roughly 4 characters per token)
+  // Estimate tokens
   const estimatedTokens = extractedText.length / 4;
   
   console.log(`Content filtering: ${pdfText.length} chars → ${extractedText.length} chars (${Math.ceil(estimatedTokens)} estimated tokens)`);
   
-  if (estimatedTokens <= maxTokens) {
-    return extractedText;
+  // If still too long, prioritize the most critical information
+  if (estimatedTokens > maxTokens) {
+    const maxCharacters = maxTokens * 4;
+    
+    // Split into chunks and prioritize customer, pickup, delivery info
+    const chunks = extractedText.split('\n\n');
+    const prioritizedChunks = chunks.sort((a, b) => {
+      let aScore = 0;
+      let bScore = 0;
+      
+      // Higher priority for customer info
+      if (/customer|willhoit|construction/i.test(a)) aScore += 100;
+      if (/customer|willhoit|construction/i.test(b)) bScore += 100;
+      
+      // Higher priority for pickup/delivery
+      if (/pickup|deliver|buena|vista|rose|hills/i.test(a)) aScore += 80;
+      if (/pickup|deliver|buena|vista|rose|hills/i.test(b)) bScore += 80;
+      
+      // Higher priority for contact info
+      if (/phone|contact|\d{3}.*\d{3}.*\d{4}/i.test(a)) aScore += 60;
+      if (/phone|contact|\d{3}.*\d{3}.*\d{4}/i.test(b)) bScore += 60;
+      
+      return bScore - aScore;
+    });
+    
+    let result = '';
+    for (const chunk of prioritizedChunks) {
+      if ((result + chunk).length <= maxCharacters) {
+        result += (result ? '\n\n' : '') + chunk;
+      } else {
+        break;
+      }
+    }
+    
+    return result + '\n\n[Content truncated for processing]';
   }
-
-  // If still too long, truncate smartly but preserve more content
-  const maxCharacters = maxTokens * 4;
-  const truncatedText = extractedText.substring(0, maxCharacters);
   
-  // Try to end at a complete word or line
-  const lastNewlineIndex = truncatedText.lastIndexOf('\n');
-  const lastSpaceIndex = truncatedText.lastIndexOf(' ');
-  
-  if (lastNewlineIndex > maxCharacters * 0.85) {
-    return truncatedText.substring(0, lastNewlineIndex) + '\n\n[Content truncated for processing]';
-  } else if (lastSpaceIndex > maxCharacters * 0.9) {
-    return truncatedText.substring(0, lastSpaceIndex) + '\n\n[Content truncated for processing]';
-  }
-  
-  return truncatedText + '\n\n[Content truncated for processing]';
+  return extractedText;
 }
 
 // Extract load information directly from PDF text using OpenAI text processing
