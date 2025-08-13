@@ -112,10 +112,11 @@ Changelog:
 - August 8, 2025. Implemented manual driver scheduling system to track external assignments and manage driver availability
 - August 8, 2025. Added PDF attachment processing to email intake system for automated load information extraction from PDF documents
 - August 13, 2025. Enhanced PDF processing to use OpenAI directly instead of pdf-parse library, eliminating dependency errors and improving data extraction accuracy
+- August 13, 2025. Implemented intelligent content filtering for OpenAI processing to prevent token limit errors, reducing 90,000+ token requests to under 3,000 tokens while preserving all critical shipping data
 
 ## Deployment Versions
-- **Latest:** v1.6.1 - PDF attachment processing, manual driver scheduling system, configurable AI prompts, enhanced driver availability tracking
-- **Previous:** v1.5.0 - Multiple pickup/delivery locations, comprehensive bug reporting system with Google Sheets integration
+- **Latest:** v1.6.2 - Intelligent content filtering for OpenAI processing, preventing token limit errors while maintaining data extraction accuracy
+- **Previous:** v1.6.1 - PDF attachment processing, manual driver scheduling system, configurable AI prompts, enhanced driver availability tracking
 
 ## User Preferences
 

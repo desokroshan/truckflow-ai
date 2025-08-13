@@ -223,6 +223,12 @@ If there are multiple pickup or delivery locations, include them in the addition
 
 export async function extractLoadInfo(transcription: string): Promise<ExtractedLoadInfo> {
   try {
+    console.log(`Processing transcription for load extraction (original length: ${transcription.length} chars)`);
+    
+    // Apply the same intelligent text processing to prevent token limit issues
+    const processedText = extractRelevantSectionsFromPDF(transcription, 10000); // Conservative limit for email content
+    console.log(`Processed transcription length: ${processedText.length} chars (estimated ${Math.ceil(processedText.length / 4)} tokens)`);
+    
     // Import storage here to avoid circular dependency
     const { storage } = await import('./storage');
     
@@ -251,7 +257,7 @@ Be precise and concise. Use "Not specified" for missing data. Empty arrays if no
         },
         {
           role: "user",
-          content: `Extract load info: "${transcription}"`
+          content: `Extract load info: "${processedText}"`
         }
       ],
       response_format: { type: "json_object" },
@@ -272,6 +278,12 @@ Be precise and concise. Use "Not specified" for missing data. Empty arrays if no
     return extractedData as ExtractedLoadInfo;
   } catch (error) {
     console.error("Error extracting load info:", error);
+    
+    // If it's a rate limit error, provide more specific guidance
+    if (error.code === 'rate_limit_exceeded') {
+      console.error('Content is too large for OpenAI processing. Applied intelligent filtering to reduce size.');
+    }
+    
     throw new Error("Failed to extract load information: " + (error as Error).message);
   }
 }
