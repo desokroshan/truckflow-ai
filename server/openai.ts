@@ -72,6 +72,73 @@ interface ExtractedLoadInfo {
   }>;
 }
 
+// Extract load information directly from PDF text using OpenAI text processing
+export async function extractLoadInfoFromPDF(pdfText: string, filename: string): Promise<ExtractedLoadInfo | null> {
+  try {
+    console.log(`Using OpenAI to process PDF text content: ${filename}`);
+    
+    const prompt = `You are a logistics AI assistant that extracts shipping information from PDF document text content. 
+
+Analyze the following PDF text content and extract all relevant shipping/load information:
+
+${pdfText}
+
+Look for:
+- Customer/shipper information (name, phone, email)
+- Pickup details (location, address, contact person, phone, date/time)
+- Delivery details (location, address, contact person, phone, date/time)
+- Cargo information (type, weight, dimensions, value)
+- Equipment requirements (truck type, trailer type)
+- Special instructions or handling requirements
+- Deadlines or time constraints
+- Multiple pickup or delivery locations if present
+
+Return the information in this exact JSON format:
+{
+  "customerName": "company or person name",
+  "customerPhone": "phone number or 'Not specified'",
+  "pickupLocation": "city, state or full address",
+  "pickupAddress": "full street address or 'Not specified'",
+  "pickupContactName": "contact person name or 'Not specified'",
+  "pickupContactPhone": "contact phone or 'Not specified'",
+  "deliveryLocation": "city, state or full address", 
+  "deliveryAddress": "full street address or 'Not specified'",
+  "cargoType": "description of cargo",
+  "weight": "weight with units or 'Not specified'",
+  "truckType": "equipment type needed or 'Not specified'",
+  "pickupTime": "date and time or 'Not specified'",
+  "deliveryTime": "date and time or 'Not specified'",
+  "deadline": "deadline information or 'Not specified'",
+  "additionalNotes": "special instructions, handling requirements, or other notes",
+  "additionalPickups": [],
+  "additionalDeliveries": []
+}
+
+If there are multiple pickup or delivery locations, include them in the additionalPickups and additionalDeliveries arrays with the same structure as above.`;
+
+    const response = await getOpenAIClient().chat.completions.create({
+      model: "gpt-4o", // Latest model for text processing
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 2000
+    });
+
+    const extractedData = JSON.parse(response.choices[0].message.content || '{}');
+    console.log(`OpenAI successfully extracted data from PDF ${filename}:`, extractedData);
+    
+    return extractedData as ExtractedLoadInfo;
+  } catch (error) {
+    console.error(`Error extracting load info from PDF ${filename}:`, error);
+    return null;
+  }
+}
+
 export async function extractLoadInfo(transcription: string): Promise<ExtractedLoadInfo> {
   try {
     // Import storage here to avoid circular dependency

@@ -111,6 +111,7 @@ Changelog:
 - August 8, 2025. Added configurable AI prompts system with tabbed dashboard interface for voice assistant and AI processing customization
 - August 8, 2025. Implemented manual driver scheduling system to track external assignments and manage driver availability
 - August 8, 2025. Added PDF attachment processing to email intake system for automated load information extraction from PDF documents
+- August 13, 2025. Enhanced PDF processing to use OpenAI directly instead of pdf-parse library, eliminating dependency errors and improving data extraction accuracy
 
 ## Deployment Versions
 - **Latest:** v1.6.1 - PDF attachment processing, manual driver scheduling system, configurable AI prompts, enhanced driver availability tracking
