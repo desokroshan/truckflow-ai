@@ -152,16 +152,34 @@ function generateEmailHash(emailContent: string, fromAddress: string, timestamp:
   return crypto.createHash('md5').update(hashInput).digest('hex');
 }
 
-// Extract and parse PDF content using OpenAI text processing (pure AI approach)
+// Extract and parse PDF content using proper PDF text extraction + OpenAI analysis
 export async function extractAndParsePDF(pdfBuffer: Buffer, filename: string): Promise<any> {
   try {
-    // For this pure OpenAI approach, we'll treat the buffer as text content
-    // In a real implementation, you'd use a PDF text extraction library here
-    // For now, we'll convert the buffer to string for OpenAI processing
-    const pdfText = pdfBuffer.toString('utf8');
-    console.log(`Processing PDF ${filename} with OpenAI text analysis (size: ${pdfBuffer.length} bytes)`);
+    console.log(`Processing PDF ${filename} with proper text extraction + OpenAI analysis (size: ${pdfBuffer.length} bytes)`);
     
-    // Use OpenAI to directly process the PDF text content and extract structured load information
+    // First, properly extract text from PDF
+    let pdfText: string;
+    try {
+      const pdfParse = await import('pdf-parse');
+      const pdfData = await pdfParse.default(pdfBuffer);
+      pdfText = pdfData.text;
+      console.log(`Successfully extracted ${pdfText.length} characters from PDF ${filename}`);
+    } catch (pdfError) {
+      console.error(`PDF text extraction failed for ${filename}:`, pdfError);
+      // Fallback: try to extract readable text from buffer
+      pdfText = pdfBuffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+      console.log(`Using fallback text extraction, got ${pdfText.length} characters`);
+    }
+    
+    // Ensure we have meaningful text content
+    if (!pdfText || pdfText.trim().length < 20) {
+      console.log(`Insufficient text content extracted from PDF: ${filename} (${pdfText.length} chars)`);
+      return null;
+    }
+    
+    console.log(`PDF text preview: ${pdfText.substring(0, 500)}...`);
+    
+    // Use OpenAI to process the extracted text and extract structured load information
     const { extractLoadInfoFromPDF } = await import('./openai');
     const extractedData = await extractLoadInfoFromPDF(pdfText, filename);
     
