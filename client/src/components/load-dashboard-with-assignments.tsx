@@ -74,6 +74,7 @@ interface Recommendations {
 }
 
 export function LoadDashboardWithAssignments() {
+  console.log("[MLOG]Loading dashboard with assignments");
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [isAssignmentDetailsOpen, setIsAssignmentDetailsOpen] = useState(false);

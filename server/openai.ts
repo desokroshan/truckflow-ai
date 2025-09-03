@@ -273,6 +273,7 @@ function extractRelevantSectionsFromPDF(pdfText: string, maxTokens: number = 150
 // Extract load information directly from PDF text using OpenAI text processing
 export async function extractLoadInfoFromPDF(pdfText: string, filename: string): Promise<ExtractedLoadInfo | null> {
   try {
+    console.log(`pdfText: ${pdfText}`)
     console.log(`Using OpenAI to process PDF text content: ${filename} (original length: ${pdfText.length} chars)`);
     
     // Extract relevant sections and optimize the PDF text to prevent token limit issues

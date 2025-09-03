@@ -4,6 +4,7 @@ import { simpleParser } from "mailparser";
 import { extractLoadInfo, generateLoadSummary } from "./openai";
 import { storage } from "./storage";
 
+
 let transporter: nodemailer.Transporter;
 
 export function initializeEmailClient() {
@@ -178,7 +179,7 @@ export async function extractAndParsePDF(pdfBuffer: Buffer, filename: string): P
       filename
     };
   } catch (error) {
-    console.error(`Error processing PDF ${filename} with OpenAI:`, error);
+    console.log(`Error processing PDF ${filename} with OpenAI:`, error);
     return null;
   }
 }
@@ -241,9 +242,11 @@ export async function processIncomingEmail(emailContent: string, fromAddress: st
     // Process PDF attachments using OpenAI
     const pdfResults = await processPDFAttachments(parsed);
     if (pdfResults.combinedText) {
+      console.log(`Extracted PDF text: ${pdfResults.combinedText}`);
       emailText = emailText + pdfResults.combinedText;
       console.log(`Combined email text with ${pdfResults.pdfCount} PDF(s) (total length: ${emailText.length})`);
     }
+    console.log(`Final email text for processing: ${emailText.slice(0, 200)}...`);
     
     // Create unique identifier for this email
     const emailHash = messageId || generateEmailHash(emailText, fromAddress, parsed.date?.toISOString() || new Date().toISOString());
@@ -478,13 +481,16 @@ export function initializeEmailMonitoring() {
 
 function fetchNewEmails() {
   // Search for unread emails
+  console.log('Searching for unread emails');
   imapClient.search(['UNSEEN'], (err, results) => {
     if (err) {
       console.error('Error searching emails:', err);
+      console.log('Error searching emails:', err);
       return;
     }
 
     if (results.length === 0) {
+      console.log('No new emails found');
       return;
     }
 
@@ -494,8 +500,10 @@ function fetchNewEmails() {
       envelope: true,
       struct: true
     });
+    console.log('Fetching unread emails');
 
     fetch.on('message', (msg) => {
+      console.log('Processing email');
       let emailContent = '';
       let fromAddress = '';
       let headers = '';

@@ -30,7 +30,7 @@ export default function StatusOverview() {
 
   const statsCards = [
     {
-      title: "Calls Today",
+      title: "Orders Today",
       value: metrics?.callsToday || 0,
       icon: Phone,
       color: "bg-blue-100 text-primary",

@@ -27,6 +27,7 @@ import SimpleModalTest from "./simple-modal-test";
 
 // Load Request Details Modal Component
 function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
+  console.log("[MLOG]Loading load request details modal");
   const extractedData = load.extractedData ? JSON.parse(load.extractedData) : null;
   
   return (

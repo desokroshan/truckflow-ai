@@ -264,6 +264,7 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
 }
 
 export default function LoadDashboard() {
+  console.log("[MLOG]Loading dashboard");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedLoad, setSelectedLoad] = useState<LoadRequest | null>(null);
@@ -592,7 +593,7 @@ export default function LoadDashboard() {
                   <TableHead>Load ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Route</TableHead>
-                  <TableHead>Equipment</TableHead>
+                  <TableHead>Truck</TableHead>
                   <TableHead>Created Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
