@@ -1311,6 +1311,23 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     }
   });
 
+  app.put("/api/settings/:key", authenticateToken, authorizeRole(['dispatcher']), async (req, res) => {
+    try {
+      const { key } = req.params;
+      const { value, description } = req.body;
+      
+      if (!value) {
+        return res.status(400).json({ error: "Value is required" });
+      }
+      
+      const setting = await storage.setSetting(key, value, description);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      res.status(500).json({ error: "Failed to update setting" });
+    }
+  });
+
   // Test OpenAI PDF parsing directly
   app.post("/api/test-openai-pdf", async (req, res) => {
     try {
