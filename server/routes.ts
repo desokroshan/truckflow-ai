@@ -702,22 +702,19 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
 
       // Send notification about flagged load
       try {
-        await sendOwnerNotification(
-          {
-            loadId: updatedLoadRequest.loadId,
-            customerName: updatedLoadRequest.customerName || "Unknown",
-            pickupLocation: updatedLoadRequest.pickupLocation || "Not specified",
-            deliveryLocation: updatedLoadRequest.deliveryLocation || "Not specified",
-            pickupTime: updatedLoadRequest.pickupTime || "Not specified",
-            cargoType: updatedLoadRequest.cargoType || "Not specified",
-            weight: updatedLoadRequest.weight || "Not specified",
-            additionalNotes: `Flagged for missing details: ${flagData.missingFields.join(', ')}. Notes: ${flagData.validationNotes}`
-          },
+        const { sendSimpleEmail } = await import('./email');
+        await sendSimpleEmail(
+          process.env.OWNER_EMAIL || "owner@truckflowai.com",
           `Load Request Flagged for Review`,
-          `Load ${updatedLoadRequest.loadId} has been flagged for missing details:\n\n` +
-          `Missing Fields: ${flagData.missingFields.join(', ')}\n` +
-          `Notes: ${flagData.validationNotes}\n\n` +
-          `Please review and contact the customer for additional information.`
+          `<div style="font-family: Arial, sans-serif;">
+            <h2>🚛 Load Request Flagged for Review</h2>
+            <p><strong>Load ID:</strong> ${updatedLoadRequest.loadId}</p>
+            <p><strong>Customer:</strong> ${updatedLoadRequest.customerName || "Unknown"}</p>
+            <p><strong>Route:</strong> ${updatedLoadRequest.pickupLocation || "Not specified"} → ${updatedLoadRequest.deliveryLocation || "Not specified"}</p>
+            <p><strong>Missing Fields:</strong> ${flagData.missingFields.join(', ')}</p>
+            <p><strong>Notes:</strong> ${flagData.validationNotes}</p>
+            <p>Please review and contact the customer for additional information.</p>
+          </div>`
         );
       } catch (emailError) {
         console.error("Failed to send flag notification:", emailError);

@@ -131,6 +131,28 @@ export async function sendOwnerNotification(
   }
 }
 
+// Simple email notification function for general alerts
+export async function sendSimpleEmail(
+  toEmail: string,
+  subject: string,
+  htmlBody: string
+): Promise<void> {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_USER || "noreply@truckflowai.com",
+      to: toEmail,
+      subject: subject,
+      html: htmlBody,
+    };
+
+    await getEmailClient().sendMail(mailOptions);
+    console.log("Simple email sent successfully");
+  } catch (error) {
+    console.error("Error sending simple email:", error);
+    throw error;
+  }
+}
+
 export async function sendOwnerSMS(
   phoneNumber: string,
   loadId: string,
