@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes, createHttpsServer } from "./routes";
 import { log } from "./vite";
 import * as dotenv from 'dotenv';
 import { initializeTwilio } from './twilio';
@@ -116,14 +116,49 @@ app.use((req, res, next) => {
   }
   console.log("vite setup done")
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  // Check if we should enable HTTPS in production
+  const enableHttps = process.env.ENABLE_HTTPS === "true" && process.env.NODE_ENV === "production";
+  
+  if (enableHttps) {
+    try {
+      // Create HTTPS server for production
+      const httpsServer = createHttpsServer(app);
+      
+      // Start HTTPS server on port 443
+      httpsServer.listen(443, "0.0.0.0", () => {
+        console.log("HTTPS server running on port 443");
+      });
+
+      // Also start HTTP server on port 80 for redirects
+      const httpPort = 80;
+      server.listen({
+        port: httpPort,
+        host: "0.0.0.0",
+      }, () => {
+        console.log(`HTTP server running on port ${httpPort} (redirects to HTTPS)`);
+      });
+
+    } catch (error) {
+      console.error("Failed to start HTTPS server:", error);
+      console.log("Falling back to HTTP server...");
+      
+      // Fallback to HTTP server
+      const port = 5000;
+      server.listen({
+        port,
+        host: "0.0.0.0",
+      }, () => {
+        log(`HTTP server serving on port ${port}`);
+      });
+    }
+  } else {
+    // Development or HTTP-only mode
+    const port = 5000;
+    server.listen({
+      port,
+      host: "0.0.0.0",
+    }, () => {
+      log(`HTTP server serving on port ${port}`);
+    });
+  }
 })();

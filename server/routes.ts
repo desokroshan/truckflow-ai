@@ -1,4 +1,6 @@
 import { createServer, type Server } from "http";
+import https from "https";
+import fs from "fs";
 import { storage } from "./storage";
 import { dbStorage } from "./dbStorage";
 import { insertLoadRequestSchema, insertCallLogSchema, flagLoadRequestSchema } from "@shared/schema";
@@ -1489,6 +1491,44 @@ ${mockEmailContent}`;
     }
   });
 
+  // Add HTTPS redirect middleware for production
+  app.use((req, res, next) => {
+    // Allow development to run on HTTP
+    if (process.env.NODE_ENV === "development") {
+      return next();
+    }
+    
+    // In production, redirect HTTP to HTTPS
+    if (req.header('x-forwarded-proto') !== 'https') {
+      res.redirect(`https://${req.get('Host')}${req.url}`);
+    } else {
+      next();
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Create HTTPS server with SSL certificates
+export function createHttpsServer(app: express.Express): https.Server {
+  const certPath = process.env.SSL_CERT_PATH || "/etc/letsencrypt/live/your-domain.com/fullchain.pem";
+  const keyPath = process.env.SSL_KEY_PATH || "/etc/letsencrypt/live/your-domain.com/privkey.pem";
+
+  try {
+    const options = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+
+    const httpsServer = https.createServer(options, app);
+    return httpsServer;
+  } catch (error) {
+    console.error("Error reading SSL certificates:", error);
+    console.error("Make sure SSL certificates are available at:");
+    console.error(`Key: ${keyPath}`);
+    console.error(`Cert: ${certPath}`);
+    console.error("Or set SSL_CERT_PATH and SSL_KEY_PATH environment variables");
+    throw error;
+  }
 }
