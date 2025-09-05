@@ -594,6 +594,7 @@ export default function LoadDashboard() {
                   <TableHead>Customer</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Truck</TableHead>
+                  <TableHead>Driver</TableHead>
                   <TableHead>Created Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -640,6 +641,11 @@ export default function LoadDashboard() {
                       >
                         {load.truckType}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-slate-900">
+                        {load.assignedDriver || "Unassigned"}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
