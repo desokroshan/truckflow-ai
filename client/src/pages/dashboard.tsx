@@ -1,6 +1,5 @@
 import { useState } from "react";
 import LoadDashboard from "@/components/load-dashboard";
-import { LoadDashboardWithAssignments } from "@/components/load-dashboard-with-assignments";
 import { FleetManagement } from "@/components/fleet-management";
 import StatusOverview from "@/components/status-overview";
 import AIProcessing from "@/components/ai-processing";
@@ -63,9 +62,8 @@ export default function Dashboard({ user }: { user?: any }) {
         {/* Load Dashboard - positioned right after status tiles */}
         <div className="mt-8">
           <Tabs defaultValue="loads" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="loads">Load Requests</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="fleet">Fleet</TabsTrigger>
           <TabsTrigger value="scheduling">Driver Scheduling</TabsTrigger>
           <TabsTrigger value="ai">AI Processing</TabsTrigger>
@@ -76,10 +74,6 @@ export default function Dashboard({ user }: { user?: any }) {
 
         <TabsContent value="loads">
           <LoadDashboard />
-        </TabsContent>
-
-        <TabsContent value="assignments">
-          <LoadDashboardWithAssignments />
         </TabsContent>
 
         <TabsContent value="fleet">
