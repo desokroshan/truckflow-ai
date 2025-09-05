@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, X, Eye, Download, Filter, Truck, MapPin, Mic2, Brain, User, Bug, Plus } from "lucide-react";
+import { Check, X, Download, Filter, Truck, MapPin, Mic2, Brain, User, Bug, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -707,19 +707,6 @@ export default function LoadDashboard() {
                             <MapPin className="w-4 h-4" />
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('View Details button clicked, load:', load);
-                            setSelectedLoad(load);
-                            setIsDialogOpen(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
