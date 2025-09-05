@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Package, Clock, DollarSign } from "lucide-react";
+import { Phone, Package, Clock } from "lucide-react";
 
 interface Metrics {
   callsToday: number;
   loadsProcessed: number;
   pendingApproval: number;
-  revenue: number;
 }
 
 export default function StatusOverview() {
@@ -53,18 +52,10 @@ export default function StatusOverview() {
       change: "Avg response: 15min",
       changeColor: "text-slate-600",
     },
-    {
-      title: "Revenue",
-      value: `$${(metrics?.revenue || 0).toLocaleString()}`,
-      icon: DollarSign,
-      color: "bg-purple-100 text-purple-600",
-      change: "+12% this week",
-      changeColor: "text-success",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {statsCards.map((stat, index) => (
         <Card key={index} className="border border-slate-200">
           <CardHeader>
