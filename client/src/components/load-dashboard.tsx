@@ -30,8 +30,30 @@ import * as React from "react";
 
 // Load Request Details Modal Component
 function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
+  // Helper function to check if address is validated
+  const isAddressValidated = (address: string) => {
+    // For now, we'll assume address is validated if it contains standard address components
+    // In a real implementation, this would check against actual validation results
+    const hasNumber = /\d/.test(address);
+    const hasStreet = /\b(st|street|ave|avenue|blvd|boulevard|rd|road|ln|lane|dr|drive|ct|court|pl|place|way)\b/i.test(address);
+    const hasState = /\b[A-Z]{2}\b/.test(address);
+    const hasZip = /\b\d{5}(-\d{4})?\b/.test(address);
+    return hasNumber && hasStreet && hasState && hasZip;
+  };
+
+  const renderAddressValidation = (address: string) => {
+    if (!isAddressValidated(address)) {
+      return (
+        <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-xs">
+          Not Validated
+        </Badge>
+      );
+    }
+    return null;
+  };
+
   return (
-    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+    <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Truck className="h-5 w-5" />
@@ -39,32 +61,7 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
         </DialogTitle>
       </DialogHeader>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        {/* Customer Information */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-900">Customer Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Name:</span>
-              <span className="text-slate-900 font-medium">{load.customerName}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Phone:</span>
-              <span className="text-slate-900">{load.customerPhone}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Email:</span>
-              <span className="text-slate-900">
-                {load.customerEmail && load.customerEmail !== 'unknown' && load.customerEmail !== 'null' 
-                  ? load.customerEmail 
-                  : 'Not provided'}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="space-y-6 mt-4">
         {/* Route Information */}
         <Card>
           <CardHeader className="pb-3">
@@ -73,70 +70,116 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
               Route Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Primary pickup/delivery */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="font-medium text-green-700 text-xs">PRIMARY PICKUP</div>
-                <div className="text-xs">
-                  <span className="text-slate-600">Location:</span>
-                  <span className="text-slate-900 ml-2">{load.pickupLocation}</span>
-                </div>
-                <div className="text-xs text-slate-500">{load.pickupAddress}</div>
-                {load.pickupContactName && (
-                  <div className="text-xs">
-                    <span className="text-slate-600">Contact:</span>
-                    <span className="text-slate-900 ml-2">{load.pickupContactName}</span>
+          <CardContent className="space-y-6">
+            {/* Pick Up Section */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-green-700 text-sm border-b border-green-200 pb-1">Pick Up</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Address</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-900">{load.pickupAddress || load.pickupLocation}</span>
+                      {renderAddressValidation(load.pickupAddress || load.pickupLocation)}
+                    </div>
                   </div>
-                )}
-                {load.pickupContactPhone && (
-                  <div className="text-xs">
-                    <span className="text-slate-600">Phone:</span>
-                    <span className="text-slate-900 ml-2">{load.pickupContactPhone}</span>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Time Frame</label>
+                    <span className="text-sm text-slate-900">{load.pickupTime || 'Not specified'}</span>
                   </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="font-medium text-blue-700 text-xs">PRIMARY DELIVERY</div>
-                <div className="text-xs">
-                  <span className="text-slate-600">Location:</span>
-                  <span className="text-slate-900 ml-2">{load.deliveryLocation}</span>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Special Instructions</label>
+                    <span className="text-sm text-slate-900">{load.additionalNotes || 'None'}</span>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500">{load.deliveryAddress}</div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Name</label>
+                    <span className="text-sm text-slate-900">{load.pickupContactName || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Phone</label>
+                    <span className="text-sm text-slate-900">{load.pickupContactPhone || 'Not specified'}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Multiple pickup locations */}
+            {/* Drop Off Section */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-blue-700 text-sm border-b border-blue-200 pb-1">Drop Off(s)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Address</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-900">{load.deliveryAddress || load.deliveryLocation}</span>
+                      {renderAddressValidation(load.deliveryAddress || load.deliveryLocation)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Time Frame</label>
+                    <span className="text-sm text-slate-900">{load.deliveryTime || load.deadline || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Special Instructions</label>
+                    <span className="text-sm text-slate-900">None</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Name</label>
+                    <span className="text-sm text-slate-900">Not specified</span>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Phone</label>
+                    <span className="text-sm text-slate-900">Not specified</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Pickup Locations */}
             {load.pickupLocations && (() => {
               try {
                 const pickupLocations = JSON.parse(load.pickupLocations);
                 if (pickupLocations && pickupLocations.length > 0) {
                   return (
-                    <div className="border-t pt-4">
-                      <div className="font-medium text-green-700 text-xs mb-3">ADDITIONAL PICKUP LOCATIONS</div>
-                      <div className="space-y-3">
-                        {pickupLocations.map((location: any, index: number) => (
-                          <div key={index} className="bg-green-50 p-3 rounded-lg">
-                            <div className="text-xs font-medium text-slate-900">{location.location}</div>
-                            <div className="text-xs text-slate-500">{location.address}</div>
-                            {location.contactName && (
-                              <div className="text-xs mt-1">
-                                <span className="text-slate-600">Contact:</span>
-                                <span className="text-slate-900 ml-2">{location.contactName}</span>
-                                {location.contactPhone && <span className="text-slate-500 ml-2">({location.contactPhone})</span>}
+                    <div className="space-y-4 border-t pt-4">
+                      <h4 className="font-medium text-green-700 text-sm">Additional Pick Up Locations</h4>
+                      {pickupLocations.map((location: any, index: number) => (
+                        <div key={index} className="bg-green-50 p-4 rounded-lg space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Address</label>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-slate-900">{location.address}</span>
+                                  {renderAddressValidation(location.address)}
+                                </div>
                               </div>
-                            )}
-                            {location.scheduledTime && (
-                              <div className="text-xs text-slate-600 mt-1">
-                                Scheduled: {new Date(location.scheduledTime).toLocaleString()}
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Time Frame</label>
+                                <span className="text-sm text-slate-900">{location.scheduledTime ? new Date(location.scheduledTime).toLocaleString() : 'Not specified'}</span>
                               </div>
-                            )}
-                            {location.instructions && (
-                              <div className="text-xs text-slate-600 mt-1 italic">{location.instructions}</div>
-                            )}
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Special Instructions</label>
+                                <span className="text-sm text-slate-900">{location.instructions || 'None'}</span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Name</label>
+                                <span className="text-sm text-slate-900">{location.contactName || 'Not specified'}</span>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Phone</label>
+                                <span className="text-sm text-slate-900">{location.contactPhone || 'Not specified'}</span>
+                              </div>
+                            </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   );
                 }
@@ -146,37 +189,47 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
               return null;
             })()}
 
-            {/* Multiple delivery locations */}
+            {/* Additional Delivery Locations */}
             {load.deliveryLocations && (() => {
               try {
                 const deliveryLocations = JSON.parse(load.deliveryLocations);
                 if (deliveryLocations && deliveryLocations.length > 0) {
                   return (
-                    <div className="border-t pt-4">
-                      <div className="font-medium text-blue-700 text-xs mb-3">ADDITIONAL DELIVERY LOCATIONS</div>
-                      <div className="space-y-3">
-                        {deliveryLocations.map((location: any, index: number) => (
-                          <div key={index} className="bg-blue-50 p-3 rounded-lg">
-                            <div className="text-xs font-medium text-slate-900">{location.location}</div>
-                            <div className="text-xs text-slate-500">{location.address}</div>
-                            {location.contactName && (
-                              <div className="text-xs mt-1">
-                                <span className="text-slate-600">Contact:</span>
-                                <span className="text-slate-900 ml-2">{location.contactName}</span>
-                                {location.contactPhone && <span className="text-slate-500 ml-2">({location.contactPhone})</span>}
+                    <div className="space-y-4 border-t pt-4">
+                      <h4 className="font-medium text-blue-700 text-sm">Additional Drop Off Locations</h4>
+                      {deliveryLocations.map((location: any, index: number) => (
+                        <div key={index} className="bg-blue-50 p-4 rounded-lg space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Address</label>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-slate-900">{location.address}</span>
+                                  {renderAddressValidation(location.address)}
+                                </div>
                               </div>
-                            )}
-                            {location.scheduledTime && (
-                              <div className="text-xs text-slate-600 mt-1">
-                                Scheduled: {new Date(location.scheduledTime).toLocaleString()}
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Time Frame</label>
+                                <span className="text-sm text-slate-900">{location.scheduledTime ? new Date(location.scheduledTime).toLocaleString() : 'Not specified'}</span>
                               </div>
-                            )}
-                            {location.instructions && (
-                              <div className="text-xs text-slate-600 mt-1 italic">{location.instructions}</div>
-                            )}
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Special Instructions</label>
+                                <span className="text-sm text-slate-900">{location.instructions || 'None'}</span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Name</label>
+                                <span className="text-sm text-slate-900">{location.contactName || 'Not specified'}</span>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-slate-600 block mb-1">Point of Contact, Phone</label>
+                                <span className="text-sm text-slate-900">{location.contactPhone || 'Not specified'}</span>
+                              </div>
+                            </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   );
                 }
@@ -188,76 +241,67 @@ function LoadRequestDetailsModal({ load }: { load: LoadRequest }) {
           </CardContent>
         </Card>
 
-        {/* Load Details & Timestamps */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-900">Load Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Cargo Type:</span>
-              <span className="text-slate-900">{load.cargoType}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Weight:</span>
-              <span className="text-slate-900">{load.weight}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Truck Type:</span>
-              <span className="text-slate-900">{load.truckType}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Special Requirements:</span>
-              <span className="text-slate-900">None</span>
-            </div>
-            <div className="border-t border-slate-200 my-3"></div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Created:</span>
-              <span className="text-slate-900">
-                {load.createdAt ? new Date(load.createdAt).toLocaleString() : 'N/A'}
-              </span>
-            </div>
-            {load.approvedAt && (
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-600">Approved:</span>
-                <span className="text-slate-900">
-                  {new Date(load.approvedAt).toLocaleString()}
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* AI Processing Results */}
-        {(load.transcription || load.extractedData) && (
-          <Card className="md:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Customer Information */}
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                <Brain className="h-4 w-4" />
-                AI Processing Results
+              <CardTitle className="text-sm font-medium text-slate-900 flex items-center">
+                <User className="w-4 h-4 mr-2" />
+                Customer Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {load.transcription && (
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Transcription:</label>
-                  <div className="bg-slate-50 p-3 rounded-md text-xs text-slate-700 max-h-32 overflow-y-auto">
-                    {load.transcription}
-                  </div>
-                </div>
-              )}
-              
-              {load.extractedData && (
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Extracted Data:</label>
-                  <div className="bg-slate-50 p-3 rounded-md text-xs text-slate-700 max-h-32 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap">{JSON.stringify(JSON.parse(load.extractedData), null, 2)}</pre>
-                  </div>
-                </div>
-              )}
+            <CardContent className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Company Name</label>
+                <span className="text-sm text-slate-900">{load.customerName}</span>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Name</label>
+                <span className="text-sm text-slate-900">{load.customerName}</span>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
+                <span className="text-sm text-slate-900">
+                  {load.customerEmail && load.customerEmail !== 'unknown' && load.customerEmail !== 'null' 
+                    ? load.customerEmail 
+                    : 'Not provided'}
+                </span>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Phone (Optional)</label>
+                <span className="text-sm text-slate-900">{load.customerPhone}</span>
+              </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Load Details */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-900 flex items-center">
+                <Truck className="w-4 h-4 mr-2" />
+                Load Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Cargo Type: Make, Model</label>
+                <span className="text-sm text-slate-900">{load.cargoType}</span>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Load Created (Date)</label>
+                <span className="text-sm text-slate-900">
+                  {load.createdAt ? new Date(load.createdAt).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Load Approved (Date)</label>
+                <span className="text-sm text-slate-900">
+                  {load.approvedAt ? new Date(load.approvedAt).toLocaleDateString() : 'Not approved yet'}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DialogContent>
   );
